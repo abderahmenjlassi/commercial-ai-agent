@@ -69,6 +69,15 @@ def get_active_orders(session_id: str) -> list:
     return get_or_create_session(session_id).get("active_orders", [])
 
 
+def set_visitor_id(session_id: str, visitor_id: str):
+    if visitor_id:
+        get_or_create_session(session_id)["visitor_id"] = visitor_id
+
+
+def get_visitor_id(session_id: str) -> str:
+    return get_or_create_session(session_id).get("visitor_id", "")
+
+
 def save_pending_recap(session_id: str, recap: dict):
     get_or_create_session(session_id)["pending_recap"] = recap
 

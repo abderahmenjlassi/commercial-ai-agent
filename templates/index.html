@@ -47,6 +47,15 @@
   <script>
     document.getElementById("today-label").textContent =
       new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+    // If widget.js passed a phone in the URL (identified returning visitor),
+    // store it in localStorage before chat.js runs so session/new picks it up.
+    (function () {
+      var p = new URLSearchParams(window.location.search).get("phone");
+      if (p && /^[259]\d{7}$/.test(p) && !localStorage.getItem("customer_phone")) {
+        localStorage.setItem("customer_phone", p);
+      }
+    })();
   </script>
   <script src="/static/js/chat.js"></script>
 </body>

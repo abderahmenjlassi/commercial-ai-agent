@@ -107,6 +107,19 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_orders_ext      ON orders(external_id);
         CREATE INDEX IF NOT EXISTS idx_orders_status   ON orders(status);
         CREATE INDEX IF NOT EXISTS idx_items_order     ON order_items(order_id);
+
+        CREATE TABLE IF NOT EXISTS visitors (
+            visitor_id     TEXT PRIMARY KEY,
+            customer_phone TEXT,
+            first_seen     TEXT NOT NULL,
+            last_seen      TEXT NOT NULL,
+            page_views     INTEGER DEFAULT 1,
+            chat_sessions  INTEGER DEFAULT 0,
+            referrer       TEXT    DEFAULT '',
+            user_agent     TEXT    DEFAULT '',
+            is_converted   INTEGER DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_visitors_phone ON visitors(customer_phone);
         """)
 
 
@@ -585,3 +598,68 @@ def get_cached_product(product_id: int) -> dict | None:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM products_cache WHERE id=?", (product_id,)).fetchone()
         return dict(row) if row else None
+
+
+# ── Visitor tracking helpers ──────────────────────────────────────────────────
+
+def upsert_visitor(visitor_id: str, referrer: str = "", user_agent: str = "") -> dict:
+    """Create a new visitor record or update an existing one (increment page_views)."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with get_conn() as conn:
+        conn.execute("""
+            INSERT INTO visitors (visitor_id, first_seen, last_seen, page_views, referrer, user_agent)
+            VALUES (?, ?, ?, 1, ?, ?)
+            ON CONFLICT(visitor_id) DO UPDATE SET
+                last_seen  = excluded.last_seen,
+                page_views = visitors.page_views + 1,
+                user_agent = COALESCE(NULLIF(excluded.user_agent, ''), visitors.user_agent),
+                referrer   = COALESCE(NULLIF(excluded.referrer, ''),  visitors.referrer)
+        """, (visitor_id, now, now, referrer[:400], user_agent[:300]))
+        row = conn.execute("SELECT * FROM visitors WHERE visitor_id=?", (visitor_id,)).fetchone()
+        return dict(row) if row else {}
+
+
+def get_visitor(visitor_id: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM visitors WHERE visitor_id=?", (visitor_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def convert_visitor(visitor_id: str, customer_phone: str) -> None:
+    """Permanently link a visitor to a customer account (irreversible upgrade)."""
+    if not visitor_id or not customer_phone:
+        return
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with get_conn() as conn:
+        conn.execute("""
+            UPDATE visitors
+            SET customer_phone = ?, is_converted = 1, last_seen = ?
+            WHERE visitor_id = ? AND (customer_phone IS NULL OR customer_phone = '')
+        """, (customer_phone, now, visitor_id))
+
+
+def increment_visitor_chat(visitor_id: str) -> None:
+    """Called when a visitor opens a new chat session."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with get_conn() as conn:
+        conn.execute("""
+            UPDATE visitors SET chat_sessions = chat_sessions + 1, last_seen = ?
+            WHERE visitor_id = ?
+        """, (now, visitor_id))
+
+
+def get_visitors_stats() -> dict:
+    with get_conn() as conn:
+        total     = conn.execute("SELECT COUNT(*) FROM visitors").fetchone()[0]
+        converted = conn.execute("SELECT COUNT(*) FROM visitors WHERE is_converted=1").fetchone()[0]
+        returning = conn.execute("SELECT COUNT(*) FROM visitors WHERE page_views > 1").fetchone()[0]
+        today     = datetime.now().strftime("%Y-%m-%d")
+        today_new = conn.execute(
+            "SELECT COUNT(*) FROM visitors WHERE first_seen LIKE ?", (f"{today}%",)).fetchone()[0]
+        return {
+            "total_visitors":     total,
+            "converted_visitors": converted,
+            "returning_visitors": returning,
+            "new_today":          today_new,
+            "conversion_rate":    round(converted / total * 100, 1) if total else 0,
+        }

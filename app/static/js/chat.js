@@ -8,9 +8,28 @@ const statusEl     = document.getElementById("agent-status");
 const statusDot    = document.getElementById("status-dot");
 const quickReplies = document.getElementById("quick-replies");
 
-let sessionId      = localStorage.getItem("session_id") || null;
-let knownPhone     = localStorage.getItem("customer_phone") || null;
-let isIdentified   = false;
+// ── Visitor & session identity ───────────────────────────────────────────────
+
+// Widget mode: running inside an iframe embedded on a website
+const urlParams  = new URLSearchParams(window.location.search);
+const WIDGET_MODE = urlParams.get("widget") === "1";
+if (WIDGET_MODE) document.body.classList.add("widget-mode");
+
+// Visitor ID: persistent UUID that survives page refreshes and server restarts.
+// Priority: URL param (passed by widget.js from parent page) > localStorage.
+function _generateVisitorId() {
+  return "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+const _urlVid = urlParams.get("vid") || "";
+if (_urlVid) localStorage.setItem("tuno_vid", _urlVid);
+const visitorId = localStorage.getItem("tuno_vid") || (() => {
+  const v = _generateVisitorId();
+  localStorage.setItem("tuno_vid", v);
+  return v;
+})();
+
+let sessionId    = localStorage.getItem("tuno_sid") || null;
+let isIdentified = false;
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -540,25 +559,24 @@ function updateHeader(ctx) {
 // ── Session ──────────────────────────────────────────────────────────────────
 
 async function initSession() {
-  // Retrieve saved session + phone from localStorage
   const savedPhone = localStorage.getItem("customer_phone") || null;
 
   if (sessionId) {
-    // Resuming existing session — just show placeholder greeting
-    appendMessage("Bonjour ! Je suis l'assistant de TuniOptique. Comment puis-je vous aider ?", "agent");
-    if (savedPhone) {
-      setQuickReplies(["Mes commandes", "Chercher un produit", "Livraison", "Aide"]);
-    } else {
-      setQuickReplies(["Voir les catégories", "Chercher un produit", "Suivre ma commande", "Recommandez-moi quelque chose"]);
-    }
+    // Resuming existing in-memory session — show a short re-entry greeting
+    appendMessage("Bonjour ! Comment puis-je vous aider ?", "agent");
+    setQuickReplies(savedPhone
+      ? ["Mes commandes", "Chercher un produit", "Livraison", "Aide"]
+      : ["Donner mon numéro", "Voir les catégories", "Chercher un produit", "Suivre ma commande"]);
     return;
   }
 
-  // New session
+  // New session — register with backend (visitor_id enables auto-identification)
   setLoading(true);
   showTyping();
   try {
-    const body = savedPhone ? { phone: savedPhone } : {};
+    const body = { visitor_id: visitorId };
+    if (savedPhone) body.phone = savedPhone;
+
     const res  = await fetch("/api/session/new", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -567,7 +585,7 @@ async function initSession() {
     const data = await res.json();
 
     sessionId = data.session_id;
-    localStorage.setItem("session_id", sessionId);
+    localStorage.setItem("tuno_sid", sessionId);
 
     hideTyping();
 
@@ -577,11 +595,12 @@ async function initSession() {
     if (ctx && ctx.known) {
       isIdentified = true;
       updateHeader(ctx);
+      // Save phone if we got one from the visitor lookup (not just localStorage)
+      if (ctx.phone && !savedPhone) {
+        localStorage.setItem("customer_phone", ctx.phone);
+      }
       appendMessage(greeting, "agent", buildCustomerCard(ctx));
-      // Context-aware quick replies based on proactive action
-      const proactive = ctx.proactive || {};
-      const chips = _proactiveChips(proactive);
-      setQuickReplies(chips);
+      setQuickReplies(_proactiveChips(ctx.proactive || {}));
     } else {
       appendMessage(greeting, "agent");
       setQuickReplies(["Donner mon numéro", "Voir les catégories", "Chercher un produit", "Suivre ma commande"]);
@@ -626,8 +645,9 @@ async function _fetchProactiveAfterIdentification(phone) {
 }
 
 async function resetSession() {
-  localStorage.removeItem("session_id");
+  localStorage.removeItem("tuno_sid");
   sessionId = null;
+  isIdentified = false;
   chatBody.innerHTML = "";
   quickReplies.innerHTML = "";
   const headerTitle = document.querySelector(".name");
@@ -650,7 +670,7 @@ async function sendText(text) {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, session_id: sessionId })
+      body: JSON.stringify({ message: text, session_id: sessionId, visitor_id: visitorId })
     });
     const data = await res.json();
     hideTyping();
@@ -660,8 +680,11 @@ async function sendText(text) {
       return;
     }
 
-    sessionId = data.session_id;
-    localStorage.setItem("session_id", sessionId);
+    // Persist session_id
+    if (data.session_id) {
+      sessionId = data.session_id;
+      localStorage.setItem("tuno_sid", sessionId);
+    }
 
     // When customer is identified for the first time mid-conversation
     const justIdentified = data.customer && (data.customer.phone || data.customer.found) && !isIdentified;
@@ -671,7 +694,11 @@ async function sendText(text) {
         localStorage.setItem("customer_phone", phone);
         updateHeader(data.customer);
         isIdentified = true;
-        // Fetch proactive message from identify endpoint
+        // Notify parent page (widget mode) so it can update its localStorage too
+        if (WIDGET_MODE && window.parent !== window) {
+          window.parent.postMessage({ type: "TUNO_IDENTIFIED", phone }, "*");
+        }
+        // Fetch proactive contextual message
         _fetchProactiveAfterIdentification(phone);
       }
     }
