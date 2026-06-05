@@ -366,6 +366,29 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_pending_orders",
+            "description": (
+                "Return all orders for a customer that are confirmed but NOT yet delivered. "
+                "Includes status, items, and tracking number (when available). "
+                "Use this to give the customer a full picture of their in-progress orders, "
+                "or when they ask 'où est ma commande', 'mes commandes en cours', etc. "
+                "For individual JAX tracking, follow up with check_delivery_status."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "description": "Customer phone number (8 digits, Tunisia)"
+                    }
+                },
+                "required": ["phone"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "escalate_to_human",
             "description": (
                 "Transfer to a human agent when: client is upset, complaint, "
@@ -395,15 +418,30 @@ def get_customer_profile(phone: str) -> dict:
 
     customer = db_module.get_customer(phone)
 
+    _active_statuses = {'En attente', 'Confirmées', 'Prêt à expédier', 'Expédiées'}
+
     if customer and customer.get("total_orders", 0) > 0:
         # Customer exists in local DB — build profile from stored data
-        orders = db_module.get_orders_by_phone(phone, limit=10)
+        orders = db_module.get_orders_by_phone(phone, limit=20)
         bought_products = []
         cat_counts: dict = {}
         delivered = 0
+        active_orders = []
+
         for o in orders:
-            if "livr" in (o.get("status") or "").lower():
+            status = (o.get("status") or "")
+            if "livr" in status.lower():
                 delivered += 1
+            if status in _active_statuses:
+                active_orders.append({
+                    "order_id":        o.get("external_id") or o["id"],
+                    "status":          status,
+                    "items":           [i.get("product_name", "") for i in o.get("items", [])[:3]],
+                    "tracking_number": o.get("tracking_number", ""),
+                    "created_at":      (o.get("created_at", "") or "")[:10],
+                    "total":           o.get("total", 0),
+                    "gouvernorat":     o.get("gouvernorat", ""),
+                })
             for item in o.get("items", []):
                 pname = item.get("product_name", "")
                 if pname and pname not in bought_products:
@@ -414,6 +452,21 @@ def get_customer_profile(phone: str) -> dict:
 
         top_category_id = max(cat_counts, key=cat_counts.get) if cat_counts else None
         last_order = orders[0]["created_at"][:10] if orders else None
+
+        # Build hint that tells the agent what to do next
+        hints = []
+        if active_orders:
+            in_transit = [o for o in active_orders if o["status"] == "Expédiées"]
+            waiting    = [o for o in active_orders if o["status"] in ("Confirmées", "Prêt à expédier")]
+            pending    = [o for o in active_orders if o["status"] == "En attente"]
+            if in_transit:
+                hints.append(f"{len(in_transit)} commande(s) en transit — propose le suivi JAX.")
+            if waiting:
+                hints.append(f"{len(waiting)} commande(s) confirmée(s) en attente d'expédition.")
+            if pending:
+                hints.append(f"{len(pending)} commande(s) en attente de confirmation.")
+        if bought_products:
+            hints.append(f"Produits achetés : {', '.join(bought_products[:3])}. Propose des complémentaires.")
 
         return {
             "phone":             phone,
@@ -428,10 +481,8 @@ def get_customer_profile(phone: str) -> dict:
             "last_order_date":   last_order,
             "top_category_id":   top_category_id,
             "bought_products":   bought_products[:5],
-            "recommendation_hint": (
-                f"Client existant. Produits achetés : {', '.join(bought_products[:3])}. "
-                "Propose des produits complémentaires." if bought_products else ""
-            )
+            "active_orders":     active_orders,
+            "recommendation_hint": " ".join(hints) if hints else "Nouveau profil — accueille chaleureusement.",
         }
 
     # Fallback: query TikTak Space live (for new customers not yet in DB)
@@ -1014,6 +1065,48 @@ def create_order(customer_name: str, phone: str, address: str, gouvernorat: str,
     }
 
 
+def get_pending_orders(phone: str) -> dict:
+    """Return all undelivered orders for a customer (En attente, Confirmées, Prêt à expédier, Expédiées)."""
+    from app import database as db_module
+
+    active_statuses = {'En attente', 'Confirmées', 'Prêt à expédier', 'Expédiées'}
+    orders = db_module.get_orders_by_phone(phone, limit=30)
+    active = [o for o in orders if o.get("status", "") in active_statuses]
+
+    if not active:
+        return {
+            "found":   False,
+            "phone":   phone,
+            "message": "Aucune commande en cours pour ce numéro.",
+        }
+
+    result = []
+    for o in active:
+        items = [i.get("product_name", "") for i in o.get("items", []) if i.get("product_name")]
+        result.append({
+            "order_id":        o.get("external_id") or o["id"],
+            "status":          o.get("status", ""),
+            "items":           items[:3],
+            "tracking_number": o.get("tracking_number", ""),
+            "created_at":      (o.get("created_at", "") or "")[:10],
+            "total":           o.get("total", 0),
+            "gouvernorat":     o.get("gouvernorat", ""),
+        })
+
+    in_transit = [o for o in result if o["status"] == "Expédiées"]
+    return {
+        "found":        True,
+        "phone":        phone,
+        "count":        len(result),
+        "orders":       result,
+        "has_tracking": any(o.get("tracking_number") for o in in_transit),
+        "summary": (
+            f"{len(result)} commande(s) en cours. "
+            + (f"{len(in_transit)} en transit (tracking disponible)." if in_transit else "")
+        ),
+    }
+
+
 def escalate_to_human(reason: str, summary: str, session_id: str = "", customer: dict = None) -> dict:
     from app import notifications
     notifications.add(
@@ -1034,6 +1127,7 @@ def escalate_to_human(reason: str, summary: str, session_id: str = "", customer:
 
 TOOL_HANDLERS = {
     "get_customer_profile":  lambda a: get_customer_profile(**a),
+    "get_pending_orders":    lambda a: get_pending_orders(**a),
     "get_delivery_info":     lambda a: get_delivery_info(**a),
     "get_invoice":           lambda a: get_invoice(**a),
     "generate_quote":        lambda a: generate_quote(**a),

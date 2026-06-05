@@ -14,11 +14,12 @@ def _now() -> str:
 def get_or_create_session(session_id: str) -> dict:
     if session_id not in _sessions:
         _sessions[session_id] = {
-            "messages":      [],
-            "created_at":    _now(),
-            "last_activity": _now(),
-            "customer":      {},
-            "has_order":     False,
+            "messages":       [],
+            "created_at":     _now(),
+            "last_activity":  _now(),
+            "customer":       {},
+            "active_orders":  [],
+            "has_order":      False,
             "has_escalation": False,
         }
     return _sessions[session_id]
@@ -58,6 +59,14 @@ def update_customer_info(session_id: str, data: dict):
 
 def get_customer_info(session_id: str) -> dict:
     return get_or_create_session(session_id).get("customer", {})
+
+
+def set_active_orders(session_id: str, orders: list):
+    get_or_create_session(session_id)["active_orders"] = orders or []
+
+
+def get_active_orders(session_id: str) -> list:
+    return get_or_create_session(session_id).get("active_orders", [])
 
 
 def save_pending_recap(session_id: str, recap: dict):

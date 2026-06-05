@@ -435,6 +435,66 @@ function buildQuoteCard(q) {
   return card;
 }
 
+// ── Pending orders card ───────────────────────────────────────────────────────
+
+function buildPendingOrdersCard(data) {
+  if (!data || !data.found || !data.orders || data.orders.length === 0) return null;
+
+  const statusIcon = {
+    "En attente":         "⏳",
+    "Confirmées":         "✅",
+    "Prêt à expédier":    "📦",
+    "Expédiées":          "🚚",
+  };
+  const statusColor = {
+    "En attente":         "#e3b341",
+    "Confirmées":         "#3fb950",
+    "Prêt à expédier":    "#58a6ff",
+    "Expédiées":          "#bc8cff",
+  };
+
+  const card = document.createElement("div");
+  card.className = "pending-orders-card";
+
+  const header = document.createElement("div");
+  header.className = "pending-orders-header";
+  header.innerHTML = `<span class="icon">📋</span><div><div class="title">Commandes en cours</div><div class="subtitle">${data.count} commande${data.count > 1 ? "s" : ""} active${data.count > 1 ? "s" : ""}</div></div>`;
+  card.appendChild(header);
+
+  data.orders.forEach(o => {
+    const row = document.createElement("div");
+    row.className = "pending-order-row";
+
+    const icon  = statusIcon[o.status]  || "📦";
+    const color = statusColor[o.status] || "#8b949e";
+    const items = (o.items || []).filter(Boolean).join(", ") || "—";
+
+    row.innerHTML = `
+      <div class="po-status" style="color:${color}">${icon} ${o.status}</div>
+      <div class="po-info">
+        <span class="po-id">Commande #${o.order_id}</span>
+        <span class="po-date">${o.created_at || ""}</span>
+      </div>
+      <div class="po-items">${items.slice(0, 60)}</div>
+      ${o.total ? `<div class="po-total">${o.total} TND</div>` : ""}`;
+
+    if (o.tracking_number && o.status === "Expédiées") {
+      const trackBtn = document.createElement("button");
+      trackBtn.className = "btn-track";
+      trackBtn.textContent = "Suivre le colis";
+      trackBtn.addEventListener("click", () => {
+        quickReplies.innerHTML = "";
+        sendText(`Suis le colis avec le tracking ${o.tracking_number}`);
+      });
+      row.appendChild(trackBtn);
+    }
+
+    card.appendChild(row);
+  });
+
+  return card;
+}
+
 // ── Typing indicator ─────────────────────────────────────────────────────────
 
 function showTyping() {
@@ -524,7 +584,7 @@ async function initSession() {
       setQuickReplies(chips);
     } else {
       appendMessage(greeting, "agent");
-      setQuickReplies(["Voir les catégories", "Chercher un produit", "Suivre ma commande", "Passer une commande"]);
+      setQuickReplies(["Donner mon numéro", "Voir les catégories", "Chercher un produit", "Suivre ma commande"]);
     }
   } catch(e) {
     hideTyping();
@@ -545,6 +605,24 @@ function _proactiveChips(proactive) {
     "welcome":       ["Voir les catégories", "Chercher un produit", "Passer une commande", "Livraison"],
   };
   return map[type] || map["welcome"];
+}
+
+async function _fetchProactiveAfterIdentification(phone) {
+  // After mid-session identification, fetch and display a proactive context message
+  try {
+    const res = await fetch("/api/session/identify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, phone })
+    });
+    const data = await res.json();
+    if (data.proactive_message) {
+      appendMessage(data.proactive_message, "agent",
+        data.customer ? buildCustomerCard(data.customer) : null);
+      const proactive = (data.customer || {}).proactive || {};
+      setQuickReplies(_proactiveChips(proactive));
+    }
+  } catch (_) { /* non-critical */ }
 }
 
 async function resetSession() {
@@ -585,13 +663,16 @@ async function sendText(text) {
     sessionId = data.session_id;
     localStorage.setItem("session_id", sessionId);
 
-    // Save phone to localStorage if customer was just identified
-    if (data.customer && (data.customer.phone || data.customer.found)) {
+    // When customer is identified for the first time mid-conversation
+    const justIdentified = data.customer && (data.customer.phone || data.customer.found) && !isIdentified;
+    if (justIdentified) {
       const phone = data.customer.phone;
-      if (phone && !localStorage.getItem("customer_phone")) {
+      if (phone) {
         localStorage.setItem("customer_phone", phone);
         updateHeader(data.customer);
         isIdentified = true;
+        // Fetch proactive message from identify endpoint
+        _fetchProactiveAfterIdentification(phone);
       }
     }
 
@@ -601,6 +682,8 @@ async function sendText(text) {
       extraEl = buildOrderSuccess(data.order_result);
     } else if (data.order_recap && data.order_recap.recap_ready) {
       extraEl = buildOrderRecap(data.order_recap);
+    } else if (data.pending_orders && data.pending_orders.found) {
+      extraEl = buildPendingOrdersCard(data.pending_orders);
     } else if (data.customer) {
       extraEl = buildCustomerCard(data.customer);
     } else if (data.invoice) {
@@ -622,6 +705,11 @@ async function sendText(text) {
       setQuickReplies(["Suivre ma commande", "Passer une autre commande", "Merci !"]);
     } else if (data.order_recap && data.order_recap.recap_ready) {
       setQuickReplies([]);
+    } else if (data.pending_orders && data.pending_orders.found) {
+      const hasTracking = data.pending_orders.has_tracking;
+      setQuickReplies(hasTracking
+        ? ["Suivre mes colis", "Passer une commande", "Voir les produits"]
+        : ["Statut de mes commandes", "Passer une commande", "Voir les produits"]);
     } else if (data.customer) {
       const proactive = data.customer.proactive || {};
       setQuickReplies(_proactiveChips(proactive));

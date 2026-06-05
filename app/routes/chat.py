@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify, render_template
 from app.agent.core import run_agent
 from app.agent import memory
-from app.agent.session_init import build_client_context, inject_into_session, generate_greeting
+from app.agent.session_init import (
+    build_client_context, inject_into_session,
+    generate_greeting, generate_post_identification_greeting,
+)
 import uuid
 
 chat_bp = Blueprint("chat", __name__)
@@ -26,16 +29,17 @@ def chat():
 
     result = run_agent(session_id, message)
     return jsonify({
-        "reply":        result["reply"],
-        "products":     result.get("products"),
-        "product":      result.get("product"),
-        "order_recap":  result.get("order_recap"),
-        "order_result": result.get("order_result"),
-        "customer":     result.get("customer"),
-        "delivery":     result.get("delivery"),
-        "invoice":      result.get("invoice"),
-        "quote":        result.get("quote"),
-        "session_id":   session_id
+        "reply":          result["reply"],
+        "products":       result.get("products"),
+        "product":        result.get("product"),
+        "order_recap":    result.get("order_recap"),
+        "order_result":   result.get("order_result"),
+        "customer":       result.get("customer"),
+        "pending_orders": result.get("pending_orders"),
+        "delivery":       result.get("delivery"),
+        "invoice":        result.get("invoice"),
+        "quote":          result.get("quote"),
+        "session_id":     session_id
     })
 
 
@@ -61,9 +65,13 @@ def new_session():
         greeting     = generate_greeting(session_id, ctx)
         customer_ctx = ctx if ctx.get("known") else None
     else:
-        # Generic welcome — no phone yet
-        greeting = ("Bonjour ! Je suis l'assistant de TuniOptique. "
-                    "Comment puis-je vous aider aujourd'hui ?")
+        # Unknown visitor — ask for phone to enable personalisation
+        greeting = (
+            "Bonjour ! Je suis l'assistant de TuniOptique. "
+            "Pour vous offrir un service personnalisé — suivi de commandes, "
+            "recommandations adaptées et assistance prioritaire — "
+            "pouvez-vous me communiquer votre numéro de téléphone ?"
+        )
         memory.add_message(session_id, "assistant", greeting)
 
     return jsonify({
@@ -77,7 +85,7 @@ def new_session():
 def identify_session():
     """
     Identify (or re-identify) a client mid-session by phone.
-    Called by the frontend when the user provides their phone in the chat.
+    Returns a proactive greeting message when the client is found.
     """
     data       = request.get_json(silent=True) or {}
     session_id = data.get("session_id", "")
@@ -89,9 +97,16 @@ def identify_session():
     ctx = build_client_context(phone)
     inject_into_session(session_id, ctx)
 
+    proactive_message = None
+    if ctx.get("known"):
+        proactive_message = generate_post_identification_greeting(session_id, ctx)
+        if proactive_message:
+            memory.add_message(session_id, "assistant", proactive_message)
+
     return jsonify({
-        "identified": ctx.get("known", False),
-        "customer":   ctx if ctx.get("known") else None,
+        "identified":        ctx.get("known", False),
+        "customer":          ctx if ctx.get("known") else None,
+        "proactive_message": proactive_message,
     })
 
 

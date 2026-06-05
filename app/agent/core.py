@@ -37,10 +37,15 @@ Tu t'adaptes à la langue du client : français, arabe dialectal tunisien, ou an
 - create_order          : créer la commande (après confirmation uniquement)
 - escalate_to_human     : transférer vers un agent humain
 
-━━━ IDENTIFICATION DU CLIENT ━━━
-- Si tu ne connais pas encore le client, demande son numéro de téléphone DÈS le premier échange commercial (commande, facture, suivi, etc.).
-- Dès que tu as le numéro → appelle get_customer_profile IMMÉDIATEMENT.
-- Adapte le ton selon le tag : Nouveau client (chaleureux), Client fidèle (personnel), VIP (prioritaire), À risque (patient).
+━━━ IDENTIFICATION DU CLIENT — PRIORITÉ ABSOLUE ━━━
+- COMMENCE TOUJOURS par identifier le client avant toute recommandation personnalisée.
+- Si le client n'est pas encore identifié, demande son numéro de téléphone DÈS le début de la conversation (même pour une simple question produit).
+- Dès que tu as le numéro → appelle get_customer_profile IMMÉDIATEMENT, avant toute autre action.
+- Après l'appel get_customer_profile :
+  * S'il a des commandes actives (non livrées) → mentionne-les proactivement et propose le suivi.
+  * S'il a un historique d'achats → suggère des produits complémentaires basés sur ses achats.
+  * S'il a une commande récente livrée → demande s'il est satisfait.
+- Adapte le ton : Nouveau client (chaleureux), Client fidèle (personnel), VIP (prioritaire), À risque (patient).
 
 ━━━ PROCESSUS DE COMMANDE SIMPLIFIÉ ━━━
 RÈGLE FONDAMENTALE : N'INTERROGE JAMAIS le client sur des informations déjà connues.
@@ -67,19 +72,19 @@ Sois concis. Une réponse courte vaut mieux qu'un long paragraphe. Ne liste pas 
 
 
 def _build_system_prompt(session_id: str) -> str:
-    """Inject known customer data into the prompt so the agent never re-asks for it."""
+    """Inject known customer data and active orders into the prompt."""
     customer = memory.get_customer_info(session_id)
     if not customer:
         return _BASE_PROMPT
 
     # Build the customer context block
     lines = []
-    if customer.get("name"):      lines.append(f"  - Nom complet    : {customer['name']}")
-    if customer.get("phone"):     lines.append(f"  - Téléphone      : {customer['phone']}")
-    if customer.get("address"):   lines.append(f"  - Adresse        : {customer['address']}")
+    if customer.get("name"):       lines.append(f"  - Nom complet    : {customer['name']}")
+    if customer.get("phone"):      lines.append(f"  - Téléphone      : {customer['phone']}")
+    if customer.get("address"):    lines.append(f"  - Adresse        : {customer['address']}")
     if customer.get("gouvernorat"):lines.append(f"  - Gouvernorat    : {customer['gouvernorat']}")
-    if customer.get("tag"):       lines.append(f"  - Tag CRM        : {customer['tag']}")
-    if customer.get("email"):     lines.append(f"  - Email          : {customer['email']}")
+    if customer.get("tag"):        lines.append(f"  - Tag CRM        : {customer['tag']}")
+    if customer.get("email"):      lines.append(f"  - Email          : {customer['email']}")
 
     if not lines:
         return _BASE_PROMPT
@@ -90,7 +95,33 @@ def _build_system_prompt(session_id: str) -> str:
         + "\n→ Ces informations sont CONFIRMÉES. Pour toute commande, utilise-les directement "
           "sans poser de questions. Salue le client par son nom si tu le connais."
     )
-    return _BASE_PROMPT + context_block
+
+    # Inject active (undelivered) orders if any exist in session memory
+    active_orders = memory.get_active_orders(session_id)
+    orders_block = ""
+    if active_orders:
+        order_lines = []
+        for o in active_orders[:4]:
+            status   = o.get("status", "")
+            oid      = o.get("order_id", "")
+            items    = ", ".join(i for i in o.get("items", []) if i)[:60]
+            tracking = o.get("tracking_number", "")
+            date     = o.get("created_at", "")
+            line     = f"  - Commande #{oid} ({date}) : {status}"
+            if items:    line += f" — {items}"
+            if tracking: line += f" [tracking JAX: {tracking}]"
+            order_lines.append(line)
+
+        orders_block = (
+            "\n\n━━━ COMMANDES ACTIVES (NON ENCORE LIVRÉES) ━━━\n"
+            + "\n".join(order_lines)
+            + "\n→ PROPOSE PROACTIVEMENT :\n"
+              "   • Si statut 'Expédiées' + tracking → appelle check_delivery_status pour donner le suivi en temps réel.\n"
+              "   • Si statut 'Confirmées' ou 'Prêt à expédier' → rassure le client sur le délai.\n"
+              "   • Si statut 'En attente' → propose de confirmer la commande."
+        )
+
+    return _BASE_PROMPT + context_block + orders_block
 
 
 # ── Tool category sets for UI routing ────────────────────────────────────────
@@ -99,6 +130,7 @@ _PRODUCT_DETAIL_TOOLS = {"get_product_details"}
 _ORDER_RECAP_TOOLS    = {"prepare_order_recap"}
 _ORDER_CREATE_TOOLS   = {"create_order"}
 _CRM_TOOLS            = {"get_customer_profile"}
+_PENDING_ORDER_TOOLS  = {"get_pending_orders"}
 _LOGISTICS_TOOLS      = {"get_delivery_info"}
 _INVOICE_TOOLS        = {"get_invoice"}
 _QUOTE_TOOLS          = {"generate_quote"}
@@ -166,8 +198,14 @@ def run_agent(session_id: str, user_message: str) -> dict:
                     "tag":         result.get("tag"),
                     "email":       result.get("email", ""),
                 })
+                # Store active orders in session memory so system prompt includes them
+                if result.get("active_orders"):
+                    memory.set_active_orders(session_id, result["active_orders"])
                 # Also try to get last known address from DB
                 _try_load_address(session_id, result.get("phone"))
+
+            elif fn_name == "get_pending_orders" and result.get("found"):
+                memory.set_active_orders(session_id, result.get("orders", []))
 
             elif fn_name == "prepare_order_recap" and result.get("recap_ready"):
                 last_recap = result
@@ -187,8 +225,8 @@ def run_agent(session_id: str, user_message: str) -> dict:
                 memory.mark_has_order(session_id)
 
             all_ui = (_PRODUCT_LIST_TOOLS | _PRODUCT_DETAIL_TOOLS | _ORDER_RECAP_TOOLS |
-                      _ORDER_CREATE_TOOLS | _CRM_TOOLS | _LOGISTICS_TOOLS |
-                      _INVOICE_TOOLS | _QUOTE_TOOLS)
+                      _ORDER_CREATE_TOOLS | _CRM_TOOLS | _PENDING_ORDER_TOOLS |
+                      _LOGISTICS_TOOLS | _INVOICE_TOOLS | _QUOTE_TOOLS)
             if fn_name in all_ui:
                 tool_results_by_name[fn_name] = result
 
@@ -262,14 +300,15 @@ def run_agent(session_id: str, user_message: str) -> dict:
         tool_results_by_name["generate_quote"] = quote_ui
 
     # ── Build UI payload ──────────────────────────────────────────────────────
-    products_ui     = None
-    product_ui      = None
-    order_recap_ui  = None
-    order_result_ui = None
-    customer_ui     = None
-    delivery_out    = None
-    invoice_out     = None
-    quote_out       = None
+    products_ui      = None
+    product_ui       = None
+    order_recap_ui   = None
+    order_result_ui  = None
+    customer_ui      = None
+    pending_orders_ui= None
+    delivery_out     = None
+    invoice_out      = None
+    quote_out        = None
 
     for tool_name, result in tool_results_by_name.items():
         if tool_name == "search_products":
@@ -284,6 +323,8 @@ def run_agent(session_id: str, user_message: str) -> dict:
             order_result_ui = result
         elif tool_name == "get_customer_profile":
             customer_ui = result
+        elif tool_name == "get_pending_orders" and result.get("found"):
+            pending_orders_ui = result
         elif tool_name == "get_delivery_info":
             delivery_out = result
         elif tool_name == "get_invoice" and result.get("found"):
@@ -292,15 +333,16 @@ def run_agent(session_id: str, user_message: str) -> dict:
             quote_out = result
 
     return {
-        "reply":        final_text,
-        "products":     products_ui,
-        "product":      product_ui,
-        "order_recap":  order_recap_ui,
-        "order_result": order_result_ui,
-        "customer":     customer_ui,
-        "delivery":     delivery_out,
-        "invoice":      invoice_out,
-        "quote":        quote_out,
+        "reply":          final_text,
+        "products":       products_ui,
+        "product":        product_ui,
+        "order_recap":    order_recap_ui,
+        "order_result":   order_result_ui,
+        "customer":       customer_ui,
+        "pending_orders": pending_orders_ui,
+        "delivery":       delivery_out,
+        "invoice":        invoice_out,
+        "quote":          quote_out,
     }
 
 

@@ -151,6 +151,21 @@ def inject_into_session(session_id: str, ctx: dict):
         "tag":         ctx.get("tag"),
         "email":       ctx.get("email"),
     })
+    # Store active (undelivered) orders so the agent can reference them immediately
+    active_statuses = {'En attente', 'Confirmées', 'Prêt à expédier', 'Expédiées'}
+    active = [
+        {
+            "order_id":       o.get("external_id") or o["id"],
+            "status":         o.get("status", ""),
+            "items":          [i.get("product_name", "") for i in o.get("items", [])[:3]],
+            "tracking_number": o.get("tracking_number", ""),
+            "created_at":     (o.get("created_at", "") or "")[:10],
+            "total":          o.get("total", 0),
+        }
+        for o in ctx.get("active_orders", [])
+        if o.get("status", "") in active_statuses
+    ]
+    memory.set_active_orders(session_id, active)
 
 
 _GREETING_PROMPT_TEMPLATE = """Tu es l'assistant commercial de TuniOptique.
@@ -236,3 +251,52 @@ def generate_greeting(session_id: str, ctx: dict, lang: str = "français") -> st
     # Store greeting as first assistant message in history
     memory.add_message(session_id, "assistant", greeting)
     return greeting
+
+
+def generate_post_identification_greeting(session_id: str, ctx: dict, lang: str = "français") -> str:
+    """
+    Generate a proactive contextual message right after a client is identified mid-conversation.
+    Does NOT add to history — the caller decides whether to store it.
+    """
+    from app.agent.core import _get_client
+    from config import Config
+
+    if not ctx.get("known"):
+        return ""
+
+    proactive = ctx.get("proactive", {})
+    ptype     = proactive.get("type", "welcome")
+    items_str = ", ".join(proactive.get("items", [])) or "vos produits"
+    prods_str = ", ".join(proactive.get("products", [])) or "produits complémentaires"
+    action_tpl  = _ACTION_DESCRIPTIONS.get(ptype, "Accueillir le client.")
+    action_desc = action_tpl.format(items=items_str, products=prods_str)
+
+    profile_lines = []
+    if ctx.get("name"):          profile_lines.append(f"Nom : {ctx['name']}")
+    if ctx.get("tag"):           profile_lines.append(f"Tag : {ctx['tag']}")
+    if ctx.get("total_orders"):  profile_lines.append(f"Total commandes : {ctx['total_orders']}")
+    if ctx.get("total_spent"):   profile_lines.append(f"Total dépensé : {ctx['total_spent']} TND")
+    if proactive.get("order_id"):profile_lines.append(f"Commande concernée : #{proactive['order_id']}")
+
+    prompt = (
+        f"Tu es l'assistant commercial de TuniOptique. Le client vient de s'identifier en cours de conversation.\n"
+        f"Génère un message de bienvenue personnalisé en {lang} (2 phrases max).\n\n"
+        f"PROFIL CLIENT :\n" + "\n".join(profile_lines) + "\n\n"
+        f"ACTION RECOMMANDÉE : {action_desc}\n\n"
+        f"INSTRUCTIONS : Salue par le prénom, mentionne directement l'action. Ton : "
+        f"{_TONE.get(ctx.get('tag', ''), 'professionnel et chaleureux')}. "
+        f"NE demande pas d'informations déjà connues."
+    )
+
+    client = _get_client()
+    try:
+        response = client.chat.completions.create(
+            model=Config.OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=100,
+            temperature=0.7,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        name = ctx.get("name", "").split()[0] if ctx.get("name") else ""
+        return f"Parfait{', ' + name if name else ''} ! Je vous reconnais dans notre système. Comment puis-je vous aider ?"
