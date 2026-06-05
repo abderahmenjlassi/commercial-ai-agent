@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support & Vente — TuniOptique</title>
+  <link rel="stylesheet" href="/static/css/chat.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <div class="chat-wrapper">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="avatar">🔭</div>
+      <div class="header-info">
+        <div class="name">TuniOptique — Assistant</div>
+        <div class="status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="agent-status">En ligne</span>
+        </div>
+      </div>
+      <button class="new-chat-btn" id="new-chat-btn" title="Nouvelle conversation">&#8635;</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-body" id="chat-body">
+      <div class="date-divider">
+        <span id="today-label"></span>
+      </div>
+    </div>
+
+    <!-- Quick replies -->
+    <div class="quick-replies" id="quick-replies"></div>
+
+    <!-- Input -->
+    <div class="chat-footer">
+      <textarea id="message-input" placeholder="Écrivez un message..." rows="1" autocomplete="off"></textarea>
+      <button class="send-btn" id="send-btn">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById("today-label").textContent =
+      new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  </script>
+  <script src="/static/js/chat.js"></script>
+</body>
+</html>

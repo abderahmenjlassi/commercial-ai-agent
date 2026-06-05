@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Fulfillment — TuniOptique</title>
+  <style>
+    :root{
+      --bg:#0d1117; --surface:#161b22; --surface2:#1c2128; --border:#30363d;
+      --text:#e6edf3; --muted:#8b949e; --muted2:#6e7681;
+      --green:#3fb950; --blue:#58a6ff; --orange:#f0883e;
+      --yellow:#e3b341; --purple:#bc8cff; --red:#f85149;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+    /* ── Topbar ── */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);
+            padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;position:sticky;top:0;z-index:200}
+    .topbar-logo{font-size:20px}
+    .topbar-title{font-size:15px;font-weight:700}
+    .topbar-sub{font-size:11px;color:var(--muted);margin-top:1px}
+    .topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .btn{border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
+         cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s}
+    .btn:hover:not(:disabled){opacity:.85} .btn:disabled{opacity:.4;cursor:default}
+    .btn-green{background:#238636;color:#fff} .btn-blue{background:#1f6feb;color:#fff}
+    .btn-red{background:#da3633;color:#fff}   .btn-orange{background:#9a4f10;color:#fff}
+    .btn-purple{background:#6e40c9;color:#fff} .btn-gray{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-sm{padding:4px 10px;font-size:11px}
+
+    /* ── Pipeline ── */
+    .pipeline{background:var(--surface);border-bottom:1px solid var(--border);
+              padding:0 20px;display:flex;overflow-x:auto;flex-shrink:0;gap:0}
+    .pipeline::-webkit-scrollbar{height:3px}
+    .pipeline::-webkit-scrollbar-thumb{background:var(--border)}
+    .pipe-stage{padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;
+                white-space:nowrap;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:90px}
+    .pipe-stage:hover{background:var(--surface2)}
+    .pipe-stage.active{background:var(--surface2)}
+    .pipe-count{font-size:20px;font-weight:800;line-height:1}
+    .pipe-label{font-size:10.5px;color:var(--muted);font-weight:500;text-align:center}
+    .pipe-stage.active .pipe-label{color:var(--text)}
+    .pipe-arrow{display:flex;align-items:center;color:var(--muted2);font-size:14px;padding:0 4px;padding-bottom:3px}
+    .pipe-divider{width:1px;background:var(--border);margin:8px 0;flex-shrink:0}
+
+    /* ── Filters ── */
+    .filters{padding:10px 20px;background:var(--bg);border-bottom:1px solid var(--border);
+             display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+    .fi{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+        padding:6px 12px;color:var(--text);font-size:12.5px;outline:none;min-width:200px}
+    .fi:focus{border-color:var(--blue)}
+    .fi::placeholder{color:var(--muted)}
+    select.fi{min-width:150px}
+    .order-meta-bar{margin-left:auto;font-size:11.5px;color:var(--muted);display:flex;gap:14px;align-items:center}
+    .source-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+
+    /* ── Main layout ── */
+    .main{flex:1;display:flex;overflow:hidden;min-height:0}
+
+    /* ── Order list ── */
+    .order-list-wrap{flex:1;overflow-y:auto;min-width:0}
+    .order-list-wrap::-webkit-scrollbar{width:5px}
+    .order-list-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .order-table{width:100%;border-collapse:collapse}
+    .order-table thead{position:sticky;top:0;z-index:10;background:var(--surface)}
+    .order-table th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;
+                    color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+    .order-table td{padding:10px 14px;border-bottom:1px solid #21262d;vertical-align:middle}
+    .order-table tr{cursor:pointer;transition:background .1s}
+    .order-table tr:hover td{background:var(--surface2)}
+    .order-table tr.selected td{background:#1f2d3d}
+    .order-table tr.selected td:first-child{border-left:2px solid var(--blue)}
+
+    /* ── Row cells ── */
+    .src-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+    .src-import {background:#1a2a3a;color:var(--blue)}
+    .src-webhook{background:#2a1a3a;color:var(--purple)}
+    .src-chat   {background:#1a3a2a;color:var(--green)}
+    .cell-id{font-family:monospace;font-size:12px;color:var(--blue);white-space:nowrap}
+    .cell-customer{font-size:13px;font-weight:600;color:var(--text)}
+    .cell-phone{font-size:12px;color:var(--muted)}
+    .cell-gov{font-size:12px;color:var(--muted)}
+    .cell-items{font-size:11.5px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .cell-total{font-size:13px;font-weight:700;color:var(--green);white-space:nowrap}
+    .cell-date{font-size:11.5px;color:var(--muted2);white-space:nowrap}
+    .row-actions{display:flex;gap:4px;flex-wrap:nowrap}
+
+    /* ── Detail panel ── */
+    .detail-panel{width:420px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);
+                  display:flex;flex-direction:column;overflow:hidden;transition:width .2s}
+    .detail-panel.collapsed{width:0;border-left:none}
+    .detail-inner{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+    .detail-inner::-webkit-scrollbar{width:4px}
+    .detail-inner::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    /* ── Detail sections ── */
+    .detail-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px;flex-shrink:0}
+    .detail-order-id{font-family:monospace;font-size:18px;font-weight:800;color:var(--blue)}
+    .detail-badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+    .status-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+    .detail-close{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px}
+    .detail-close:hover{background:var(--surface2);color:var(--text)}
+
+    .detail-section{padding:14px 18px;border-bottom:1px solid #21262d}
+    .detail-section-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .info-field{}
+    .info-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+    .info-value{font-size:13px;color:var(--text);margin-top:2px}
+    .info-value.mono{font-family:monospace;color:var(--blue)}
+
+    /* ── Items ── */
+    .item-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #21262d}
+    .item-row:last-child{border-bottom:none}
+    .item-img{width:40px;height:40px;object-fit:contain;background:var(--bg);border-radius:6px;padding:3px;flex-shrink:0}
+    .item-info{flex:1;min-width:0}
+    .item-name{font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .item-qty-price{font-size:11.5px;color:var(--muted);margin-top:2px}
+    .item-total{font-size:13px;font-weight:700;color:var(--green);flex-shrink:0}
+
+    /* ── Amounts ── */
+    .amounts-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:13px}
+    .amounts-row.total-row{border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+    .amounts-row.total-row .amounts-label{font-weight:700;color:var(--text)}
+    .amounts-row.total-row .amounts-value{font-size:18px;font-weight:800;color:var(--green)}
+    .amounts-label{color:var(--muted)}
+    .amounts-value{color:var(--text)}
+
+    /* ── History ── */
+    .history-item{display:flex;gap:10px;padding:6px 0}
+    .hist-line{display:flex;flex-direction:column;align-items:center;gap:0}
+    .hist-dot{width:10px;height:10px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:2px}
+    .hist-dot.latest{background:var(--blue)}
+    .hist-connector{width:2px;flex:1;background:var(--border);min-height:12px}
+    .hist-body{flex:1;padding-bottom:8px}
+    .hist-status{font-size:12.5px;font-weight:600;color:var(--text)}
+    .hist-from{font-size:11px;color:var(--muted)}
+    .hist-note{font-size:11.5px;color:var(--muted);margin-top:2px;font-style:italic}
+    .hist-time{font-size:10.5px;color:var(--muted2);margin-top:1px}
+
+    /* ── Actions ── */
+    .action-section{padding:14px 18px;background:var(--bg);flex-shrink:0;border-top:1px solid var(--border)}
+    .action-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+    .action-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+                  padding:7px 12px;color:var(--text);font-size:12.5px;outline:none;margin-bottom:8px;font-family:monospace}
+    .action-input:focus{border-color:var(--blue)}
+    .action-input::placeholder{color:var(--muted)}
+    .action-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+                     padding:7px 12px;color:var(--text);font-size:12.5px;outline:none;resize:none;
+                     margin-bottom:8px;font-family:inherit}
+    .action-textarea:focus{border-color:var(--blue)}
+    .action-textarea::placeholder{color:var(--muted)}
+    .action-btns{display:flex;gap:6px;flex-wrap:wrap}
+    .terminal-msg{font-size:12px;color:var(--muted2);font-style:italic}
+
+    /* ── Empty ── */
+    .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+    .empty-icon{font-size:40px;margin-bottom:10px}
+    .detail-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+                        flex:1;color:var(--muted);gap:8px;padding:20px}
+    .detail-placeholder .icon{font-size:36px}
+    .detail-placeholder p{font-size:13px;text-align:center}
+
+    /* ── Spinner ── */
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);
+             border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-logo">🚚</div>
+  <div>
+    <div class="topbar-title">Fulfillment</div>
+    <div class="topbar-sub">TuniOptique — Traitement des commandes</div>
+  </div>
+  <div class="topbar-right">
+    <span style="font-size:11px;color:var(--muted)" id="refresh-label">—</span>
+    <button class="btn btn-gray btn-sm" onclick="boot()">↺ Actualiser</button>
+    <a href="/admin" class="btn btn-gray btn-sm">← Admin</a>
+    <a href="/" class="btn btn-green btn-sm">💬 Chat</a>
+  </div>
+</div>
+
+<!-- Pipeline funnel -->
+<div class="pipeline" id="pipeline"></div>
+
+<!-- Filters -->
+<div class="filters">
+  <input class="fi" id="search" placeholder="🔍 Client, téléphone, #commande…" oninput="applyFilters()">
+  <select class="fi" id="gov-filter" onchange="applyFilters()">
+    <option value="">Tous les gouvernorats</option>
+  </select>
+  <div class="order-meta-bar" id="meta-bar">
+    <span><span class="source-dot" style="background:var(--blue)"></span>Importée</span>
+    <span><span class="source-dot" style="background:var(--purple)"></span>Webhook</span>
+    <span><span class="source-dot" style="background:var(--green)"></span>Chat IA</span>
+    <span id="count-label" style="color:var(--muted)">—</span>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="main">
+
+  <!-- Order list -->
+  <div class="order-list-wrap" id="order-list-wrap">
+    <table class="order-table" id="order-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>#</th>
+          <th>Client</th>
+          <th>Téléphone</th>
+          <th>Gouvernorat</th>
+          <th>Produits</th>
+          <th>Total</th>
+          <th>Date</th>
+          <th>Actions rapides</th>
+        </tr>
+      </thead>
+      <tbody id="order-tbody">
+        <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted)"><div class="spinner"></div> Chargement…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-panel collapsed" id="detail-panel">
+    <div class="detail-inner" id="detail-inner">
+      <div class="detail-placeholder">
+        <div class="icon">👆</div>
+        <p>Sélectionnez une commande<br>pour voir ses détails</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let currentStage  = 'En attente';
+let allOrders     = [];
+let selectedId    = null;
+let transitions   = {};
+let allStages     = [];
+let terminalStages= [];
+let statsData     = {};
+let govOptions    = new Set();
+
+const STAGE_COLOR = {
+  'En attente':'#f0883e','Confirmées':'#58a6ff','Prêt à expédier':'#e3b341',
+  'Expédiées':'#bc8cff','Livrées':'#3fb950','Payées':'#2ea043',
+  'Annulées':'#6e7681','Retour non reçues':'#f85149','Retour reçues':'#8b949e',
+  'Panier abandonné':'#444d56'
+};
+const BTN_CLASS = {
+  'Confirmées':'btn-blue','Prêt à expédier':'btn-blue','Expédiées':'btn-orange',
+  'Livrées':'btn-green','Payées':'btn-green','Annulées':'btn-red',
+  'Retour non reçues':'btn-red','Retour reçues':'btn-red','En attente':'btn-blue'
+};
+const TRANS_ICON = {
+  'Confirmées':'✓','Prêt à expédier':'📋','Expédiées':'🚚','Livrées':'✅',
+  'Payées':'💰','Annulées':'✕','Retour non reçues':'↩','Retour reçues':'📦','En attente':'↺'
+};
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+async function boot() {
+  const [tR, sR] = await Promise.all([
+    fetch('/api/fulfillment/transitions'),
+    fetch('/api/fulfillment/stats')
+  ]);
+  const tData = await tR.json();
+  statsData   = await sR.json();
+  allStages      = tData.stages;
+  terminalStages = tData.terminal;
+  transitions    = tData.transitions;
+
+  buildPipeline();
+  await loadOrders();
+  setInterval(async () => {
+    const r = await fetch('/api/fulfillment/stats');
+    statsData = await r.json();
+    updatePipelineCounts();
+    document.getElementById('refresh-label').textContent =
+      'Actualisé ' + new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }, 20000);
+}
+
+// ── Pipeline ───────────────────────────────────────────────────────────────────
+function buildPipeline() {
+  const p = document.getElementById('pipeline');
+  p.innerHTML = '';
+  allStages.forEach((s, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'pipe-arrow'; arrow.textContent = '›';
+      p.appendChild(arrow);
+    }
+    p.appendChild(makePipeBtn(s));
+  });
+  const div = document.createElement('div'); div.className='pipe-divider'; p.appendChild(div);
+  terminalStages.forEach(s => p.appendChild(makePipeBtn(s)));
+}
+
+function makePipeBtn(stage) {
+  const stat = statsData[stage] || {count:0};
+  const el = document.createElement('div');
+  el.className = 'pipe-stage' + (stage===currentStage?' active':'');
+  el.id = 'ps-' + stage.replace(/\s/g,'_');
+  el.onclick = () => selectStage(stage);
+  el.innerHTML = `
+    <span class="pipe-count" style="color:${STAGE_COLOR[stage]||'#8b949e'}">${stat.count}</span>
+    <span class="pipe-label">${stage}</span>`;
+  return el;
+}
+
+function updatePipelineCounts() {
+  [...allStages,...terminalStages].forEach(s => {
+    const el = document.getElementById('ps-' + s.replace(/\s/g,'_'));
+    if (el) el.querySelector('.pipe-count').textContent = (statsData[s]||{count:0}).count;
+  });
+}
+
+function selectStage(stage) {
+  currentStage = stage;
+  document.querySelectorAll('.pipe-stage').forEach(el =>
+    el.classList.toggle('active', el.id === 'ps-' + stage.replace(/\s/g,'_')));
+  loadOrders();
+  if (selectedId) closeDetail();
+}
+
+// ── Orders ─────────────────────────────────────────────────────────────────────
+async function loadOrders() {
+  const search = document.getElementById('search').value;
+  const gov    = document.getElementById('gov-filter').value;
+  const params = new URLSearchParams({status: currentStage, limit:200, search, gouvernorat:gov});
+  const r = await fetch(`/api/fulfillment/orders?${params}`);
+  const d = await r.json();
+  allOrders = d.orders || [];
+
+  // Populate gov filter
+  allOrders.forEach(o => { if (o.gouvernorat) govOptions.add(o.gouvernorat); });
+  const sel = document.getElementById('gov-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les gouvernorats</option>';
+  [...govOptions].sort().forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    if (g === cur) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById('count-label').textContent =
+    `${allOrders.length} commande${allOrders.length>1?'s':''} — ${currentStage}`;
+
+  renderTable(allOrders);
+
+  // Re-render detail if still selected
+  if (selectedId) {
+    const found = allOrders.find(o => o.id === selectedId);
+    if (found) renderDetail(found);
+  }
+}
+
+function applyFilters() { loadOrders(); }
+
+function renderTable(orders) {
+  const tbody = document.getElementById('order-tbody');
+  if (!orders.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">
+      <div class="empty-icon">📭</div><p>Aucune commande dans cette étape.</p>
+    </div></td></tr>`;
+    return;
+  }
+  const allowed = transitions[currentStage] || [];
+  tbody.innerHTML = orders.map(o => {
+    const src   = o.source || 'import';
+    const extId = o.external_id ? `#${o.external_id}` : `#${o.id.slice(0,8)}`;
+    const items = (o.items||[]).map(i=>`${(i.product_name||'').slice(0,22)}×${Math.round(i.quantity)}`).join(', ');
+    const quickBtns = allowed.slice(0,2).map(s =>
+      `<button class="btn btn-sm ${BTN_CLASS[s]||'btn-gray'}"
+        onclick="quickTransition(event,'${esc(o.id)}','${esc(s)}')"
+        title="${s}">${TRANS_ICON[s]||'→'} ${s}</button>`
+    ).join('');
+    return `
+    <tr onclick="openDetail('${esc(o.id)}')" id="row-${esc(o.id)}"
+        class="${selectedId===o.id?'selected':''}">
+      <td><span class="src-badge src-${src}">${src}</span></td>
+      <td class="cell-id">${extId}</td>
+      <td><div class="cell-customer">${esc(o.customer_name||'—')}</div></td>
+      <td class="cell-phone">${esc(o.customer_phone||'—')}</td>
+      <td class="cell-gov">${esc(o.gouvernorat||'—')}</td>
+      <td class="cell-items" title="${esc(items)}">${esc(items||'—')}</td>
+      <td class="cell-total">${fmt(o.total)} TND</td>
+      <td class="cell-date">${(o.created_at||'').slice(0,10)}</td>
+      <td onclick="event.stopPropagation()"><div class="row-actions">${quickBtns}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function quickTransition(e, orderId, newStatus) {
+  e.stopPropagation();
+  const ok = await doTransition(orderId, newStatus, '', '');
+  if (ok) { await loadOrders(); const r = await fetch('/api/fulfillment/stats'); statsData=await r.json(); updatePipelineCounts(); }
+}
+
+// ── Detail panel ───────────────────────────────────────────────────────────────
+async function openDetail(id) {
+  selectedId = id;
+  document.querySelectorAll('#order-tbody tr').forEach(r =>
+    r.classList.toggle('selected', r.id==='row-'+id));
+  const order = allOrders.find(o => o.id === id);
+  if (!order) return;
+
+  document.getElementById('detail-panel').classList.remove('collapsed');
+
+  // Load history
+  const hr = await fetch(`/api/fulfillment/orders/${id}/history`);
+  const hd = await hr.json();
+  order._history = hd.history || [];
+
+  renderDetail(order);
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.querySelectorAll('#order-tbody tr').forEach(r => r.classList.remove('selected'));
+  document.getElementById('detail-panel').classList.add('collapsed');
+  document.getElementById('detail-inner').innerHTML = `
+    <div class="detail-placeholder">
+      <div class="icon">👆</div><p>Sélectionnez une commande<br>pour voir ses détails</p>
+    </div>`;
+}
+
+function renderDetail(o) {
+  const src    = o.source || 'import';
+  const extId  = o.external_id ? `#${o.external_id}` : `#${o.id.slice(0,8)}`;
+  const allowed= transitions[o.status] || [];
+  const items  = o.items || [];
+  const history= o._history || [];
+  const needsTrack = allowed.includes('Expédiées');
+
+  const itemsHtml = items.map(i => `
+    <div class="item-row">
+      <img class="item-img" src="${esc(i.product_thumb||i.photo||'')}" onerror="this.style.display='none'" alt="">
+      <div class="item-info">
+        <div class="item-name">${esc(i.product_name||'—')}</div>
+        <div class="item-qty-price">Qté : ${i.quantity||1} · P.U. : ${fmt(i.price_ttc||i.price_unit||0)} TND</div>
+      </div>
+      <div class="item-total">${fmt(i.final_price||i.line_total||0)} TND</div>
+    </div>`).join('') || '<p style="font-size:12px;color:var(--muted)">Aucun produit.</p>';
+
+  const histHtml = history.length ? history.map((h,i)=>`
+    <div class="history-item">
+      <div class="hist-line">
+        <div class="hist-dot${i===history.length-1?' latest':''}"></div>
+        ${i<history.length-1?'<div class="hist-connector"></div>':''}
+      </div>
+      <div class="hist-body">
+        <div class="hist-status" style="color:${STAGE_COLOR[h.to_status]||'var(--text)'}">${esc(h.to_status)}</div>
+        ${h.from_status?`<div class="hist-from">depuis : ${esc(h.from_status)}</div>`:''}
+        ${h.note?`<div class="hist-note">"${esc(h.note)}"</div>`:''}
+        <div class="hist-time">${(h.created_at||'').slice(0,16)}</div>
+      </div>
+    </div>`).join('')
+  : '<p style="font-size:12px;color:var(--muted)">Aucun événement.</p>';
+
+  const statusColor = STAGE_COLOR[o.status] || 'var(--muted)';
+
+  document.getElementById('detail-inner').innerHTML = `
+
+    <!-- Header -->
+    <div class="detail-header">
+      <div style="flex:1">
+        <div class="detail-order-id">${extId}</div>
+        <div class="detail-badges">
+          <span class="src-badge src-${src}">${src}</span>
+          <span class="status-badge" style="background:${statusColor}22;color:${statusColor}">${esc(o.status)}</span>
+          ${o.tracking_number?`<span class="status-badge" style="background:#1a2a3a;color:var(--blue);font-family:monospace">📦 ${esc(o.tracking_number)}</span>`:''}
+        </div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+
+    <!-- Customer -->
+    <div class="detail-section">
+      <div class="detail-section-title">Client</div>
+      <div class="info-grid">
+        <div class="info-field">
+          <div class="info-label">Nom complet</div>
+          <div class="info-value">${esc(o.customer_name||'—')}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Téléphone</div>
+          <div class="info-value">${esc(o.customer_phone||'—')}</div>
+        </div>
+        <div class="info-field" style="grid-column:1/-1">
+          <div class="info-label">Adresse de livraison</div>
+          <div class="info-value">${esc(o.address||'—')}, ${esc(o.gouvernorat||'')}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Paiement</div>
+          <div class="info-value">${esc(o.payment_type||o.payement_type||'CASH')}</div>
+        </div>
+        <div class="info-field">
+          <div class="info-label">Date commande</div>
+          <div class="info-value">${(o.created_at||'').slice(0,16)}</div>
+        </div>
+        ${o.comment?`<div class="info-field" style="grid-column:1/-1">
+          <div class="info-label">Note client</div>
+          <div class="info-value">${esc(o.comment)}</div>
+        </div>`:''}
+        ${o.fulfillment_note?`<div class="info-field" style="grid-column:1/-1">
+          <div class="info-label">Note fulfillment</div>
+          <div class="info-value">${esc(o.fulfillment_note)}</div>
+        </div>`:''}
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="detail-section">
+      <div class="detail-section-title">Produits (${items.length})</div>
+      ${itemsHtml}
+      <div style="margin-top:10px">
+        <div class="amounts-row"><span class="amounts-label">Sous-total</span><span class="amounts-value">${fmt(o.total)} TND</span></div>
+        <div class="amounts-row"><span class="amounts-label">Livraison</span><span class="amounts-value">${o.transport_price!=null?fmt(o.transport_price)+' TND':'—'}</span></div>
+        <div class="amounts-row total-row"><span class="amounts-label">TOTAL</span><span class="amounts-value">${fmt(o.total)} TND</span></div>
+      </div>
+    </div>
+
+    <!-- Timestamps -->
+    ${(o.confirmed_at||o.shipped_at||o.delivered_at)?`
+    <div class="detail-section">
+      <div class="detail-section-title">Dates clés</div>
+      <div class="info-grid">
+        ${o.confirmed_at?`<div class="info-field"><div class="info-label">Confirmée le</div><div class="info-value">${o.confirmed_at.slice(0,16)}</div></div>`:''}
+        ${o.shipped_at  ?`<div class="info-field"><div class="info-label">Expédiée le</div><div class="info-value">${o.shipped_at.slice(0,16)}</div></div>`:''}
+        ${o.delivered_at?`<div class="info-field"><div class="info-label">Livrée le</div><div class="info-value">${o.delivered_at.slice(0,16)}</div></div>`:''}
+      </div>
+    </div>`:''}
+
+    <!-- History -->
+    <div class="detail-section">
+      <div class="detail-section-title">Historique fulfillment</div>
+      ${histHtml}
+    </div>
+
+    <!-- Actions -->
+    <div class="action-section">
+      <div class="action-title">Changer le statut</div>
+      ${allowed.length===0
+        ? `<p class="terminal-msg">Étape terminale — aucune action disponible.</p>`
+        : `${needsTrack?`<input class="action-input" id="detail-track" placeholder="Numéro de suivi JAX (requis pour Expédier…)">`:''}
+           <textarea class="action-textarea" id="detail-note" rows="2" placeholder="Note (optionnel)…"></textarea>
+           <div class="action-btns">
+             ${allowed.map(s=>`
+               <button class="btn btn-sm ${BTN_CLASS[s]||'btn-gray'}"
+                 onclick="detailTransition('${esc(o.id)}','${esc(s)}')">
+                 ${TRANS_ICON[s]||'→'} ${s}
+               </button>`).join('')}
+           </div>`}
+    </div>`;
+}
+
+async function detailTransition(orderId, newStatus) {
+  const note    = (document.getElementById('detail-note')?.value||'').trim();
+  const tracking= (document.getElementById('detail-track')?.value||'').trim();
+  const ok = await doTransition(orderId, newStatus, note, tracking);
+  if (ok) {
+    await loadOrders();
+    const r = await fetch('/api/fulfillment/stats');
+    statsData = await r.json();
+    updatePipelineCounts();
+    // Re-open detail with updated data
+    await openDetail(orderId);
+  }
+}
+
+async function doTransition(orderId, newStatus, note, tracking) {
+  const r = await fetch(`/api/fulfillment/orders/${orderId}/transition`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status:newStatus, note, tracking})
+  });
+  const d = await r.json();
+  if (!d.success) alert(d.message || 'Erreur transition');
+  return d.success;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function fmt(n) {
+  const v = parseFloat(n)||0;
+  if (v>1e9) return (v/1e9).toFixed(1)+'G';
+  if (v>1e6) return (v/1e6).toFixed(1)+'M';
+  if (v>1e3) return (v/1e3).toFixed(1)+'k';
+  return v.toLocaleString('fr-FR',{maximumFractionDigits:2});
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+boot();
+</script>
+</body>
+</html>
