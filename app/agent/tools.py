@@ -8,6 +8,7 @@ APIs:
 """
 import json
 import requests
+from datetime import datetime
 from config import Config
 
 # ── Shared HTTP helpers ────────────────────────────────────────────────────────
@@ -81,6 +82,57 @@ TOOLS = [
                     }
                 },
                 "required": ["phone"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_recommended_products",
+            "description": (
+                "Return personalized product recommendations for an identified customer, "
+                "based on their purchase history stored in the local catalog. "
+                "Finds complementary products in the same categories as what they have bought before. "
+                "Falls back to popular products if no history is found. "
+                "Call this whenever the customer asks for suggestions, recommendations, "
+                "or 'what should I buy', AND when the proactive action is 'upsell'."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string",
+                        "description": "Customer phone number (8 digits, Tunisia)"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Number of products to return (default 6)",
+                        "default": 6
+                    }
+                },
+                "required": ["phone"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "verify_product_live",
+            "description": (
+                "Verify the CURRENT price and stock of a product by querying the live API. "
+                "Use this when: (1) a client asks if a product is still available or its exact price, "
+                "(2) local data might be outdated. "
+                "This updates the local catalog with the fresh data and reports any price or stock changes."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_id": {
+                        "type": "integer",
+                        "description": "Numeric product ID to verify"
+                    }
+                },
+                "required": ["product_id"]
             }
         }
     },
@@ -944,8 +996,9 @@ def prepare_order_recap(customer_name: str = "", phone: str = "", address: str =
                         gouvernorat: str = "", product_ids: list = None,
                         payement_type: str = "CASH", comment: str = "") -> dict:
     """
-    Fetch product details and build a structured recap for the UI.
-    Missing customer fields are reported so the agent only asks for what's truly absent.
+    Fetch product details (local DB + live API verification) and build the order recap.
+    Live price/stock is checked for any product whose local data is older than
+    Config.PRODUCT_LIVE_CHECK_MINUTES, so the recap always reflects real current prices.
     """
     product_ids = product_ids or []
 
@@ -958,41 +1011,94 @@ def prepare_order_recap(customer_name: str = "", phone: str = "", address: str =
     if not product_ids:   missing.append("produit(s)")
     if missing:
         return {
-            "recap_ready": False,
+            "recap_ready":   False,
             "missing_fields": missing,
             "message": f"Informations manquantes : {', '.join(missing)}. Demande uniquement ces champs au client."
         }
 
-    items = []
-    total = 0.0
-    errors = []
+    from datetime import timedelta
+    from app import database as db_module
+    stale_threshold = timedelta(minutes=Config.PRODUCT_LIVE_CHECK_MINUTES)
+    now = datetime.now()
+
+    items       = []
+    total       = 0.0
+    errors      = []
+    price_alerts= []   # products whose price changed since last sync
 
     for entry in product_ids:
         pid = entry.get("product_id")
         qty = entry.get("quantity", 1)
-        detail = get_product_details(pid)
-        if "error" in detail:
-            errors.append(f"Produit {pid} introuvable.")
+
+        # Determine if local data is fresh enough
+        local = db_module.get_product_local(pid)
+        needs_live_check = True
+        if local and local.get("synced_at"):
+            try:
+                age = now - datetime.strptime(local["synced_at"][:19], "%Y-%m-%d %H:%M:%S")
+                needs_live_check = age > stale_threshold
+            except Exception:
+                pass
+
+        if needs_live_check:
+            live = verify_product_live(pid)
+            if live.get("verified"):
+                price_final = live["price_live"]
+                in_stock    = live["in_stock"]
+                stock       = live["stock_live"]
+                name        = live["name"] or (local.get("name") if local else f"Produit #{pid}")
+                photo       = local.get("photo", "") if local else ""
+                if live.get("price_changed"):
+                    price_alerts.append(
+                        f"{name} : prix mis à jour {live['price_local']} → {live['price_live']} TND"
+                    )
+                if not in_stock:
+                    errors.append(f"'{name}' est en rupture de stock (vérifié en direct).")
+                    continue
+            elif local:
+                # Live check failed — fall back to local data with a freshness note
+                price_final = local["price_final"]
+                in_stock    = bool(local["in_stock"])
+                stock       = local["stock"]
+                name        = local["name"]
+                photo       = local.get("photo", "")
+            else:
+                errors.append(f"Produit {pid} introuvable.")
+                continue
+        else:
+            # Local data is fresh — use it directly
+            detail = get_product_details(pid)
+            if "error" in detail:
+                errors.append(f"Produit {pid} introuvable.")
+                continue
+            price_final = detail["price_final"]
+            in_stock    = detail["in_stock"]
+            stock       = detail["stock"]
+            name        = detail["name"]
+            photo       = detail.get("photo", "")
+
+        if not in_stock:
+            errors.append(f"'{name}' n'est plus disponible.")
             continue
-        line_total = round(detail["price_final"] * qty, 2)
+
+        line_total = round(price_final * qty, 2)
         total += line_total
         items.append({
-            "product_id":    pid,
-            "name":          detail["name"],
-            "price_unit":    detail["price_final"],
-            "price_original":detail["price_original"],
-            "has_discount":  detail["has_discount"],
-            "quantity":      qty,
-            "line_total":    line_total,
-            "photo":         detail.get("photo", ""),
-            "in_stock":      detail["in_stock"],
-            "stock":         detail["stock"],
+            "product_id":  pid,
+            "name":        name,
+            "price_unit":  price_final,
+            "quantity":    qty,
+            "line_total":  line_total,
+            "photo":       photo,
+            "in_stock":    in_stock,
+            "stock":       stock,
+            "price_verified": needs_live_check,
         })
 
-    if errors:
+    if errors and not items:
         return {"error": " ".join(errors)}
 
-    return {
+    recap = {
         "recap_ready":   True,
         "customer_name": customer_name,
         "phone":         phone,
@@ -1000,9 +1106,16 @@ def prepare_order_recap(customer_name: str = "", phone: str = "", address: str =
         "gouvernorat":   gouvernorat,
         "payement_type": payement_type,
         "comment":       comment,
-        "items": items,
-        "total": round(total, 2),
+        "items":         items,
+        "total":         round(total, 2),
+        "prices_verified": True,
     }
+    if price_alerts:
+        recap["price_alerts"] = price_alerts
+    if errors:
+        recap["warnings"] = errors
+
+    return recap
 
 
 def create_order(customer_name: str, phone: str, address: str, gouvernorat: str,
@@ -1063,6 +1176,123 @@ def create_order(customer_name: str, phone: str, address: str, gouvernorat: str,
         "total": total,
         "message": "Commande enregistrée avec succès. Un agent va confirmer votre commande sous peu."
     }
+
+
+def get_recommended_products(phone: str, limit: int = 6) -> dict:
+    """
+    Return personalized product recommendations based on the customer's purchase history.
+    Uses local DB — fast and offline-capable. Falls back to popular products.
+    """
+    from app import database as db_module
+
+    orders = db_module.get_orders_by_phone(phone, limit=30)
+    bought_ids   = []
+    bought_names = []
+    for o in orders:
+        for item in o.get("items", []):
+            pid   = item.get("product_id")
+            pname = item.get("product_name", "")
+            if pid and pid not in bought_ids:
+                bought_ids.append(int(pid))
+            if pname and pname not in bought_names:
+                bought_names.append(pname)
+
+    if bought_ids:
+        products = db_module.get_complementary_products(bought_ids, limit)
+        rtype    = "complementary"
+        message  = (
+            f"Basé sur vos achats précédents ({', '.join(bought_names[:2])}…)"
+            if bought_names else "Produits complémentaires"
+        )
+    else:
+        products = db_module.get_popular_products(limit)
+        rtype    = "popular"
+        message  = "Produits populaires du moment"
+
+    if not products:
+        # Absolute fallback: any active in-stock products
+        products = db_module.search_products_local(in_stock_only=True, limit=limit)
+        rtype    = "fallback"
+        message  = "Produits disponibles"
+
+    return {
+        "found":            len(products) > 0,
+        "type":             rtype,
+        "message":          message,
+        "based_on_history": bool(bought_ids),
+        "results": [{
+            "id":             p["id"],
+            "name":           p["name"],
+            "category":       p.get("category_name", ""),
+            "price_original": p["price"],
+            "price_final":    p["price_final"],
+            "has_discount":   p.get("has_discount", False),
+            "stock":          p["stock"],
+            "in_stock":       p["in_stock"],
+            "photo":          p.get("photo_thumb") or p.get("photo", ""),
+            "description":    (p.get("description") or "")[:150],
+        } for p in products],
+    }
+
+
+def verify_product_live(product_id: int) -> dict:
+    """
+    Check real-time price and stock from the TikTakPro API.
+    Updates the local DB if data has changed.
+    """
+    data = _get(f"{Config.TIKTAKPRO_BASE}/products/{product_id}/", _tiktakpro_headers())
+    if "error" in data:
+        return {
+            "verified":   False,
+            "product_id": product_id,
+            "error":      data.get("error", "API error"),
+            "message":    "Impossible de vérifier le prix en direct. Utilisez les données locales.",
+        }
+
+    pricing  = _format_price(data)
+    stock    = data.get("stock", 0)
+    in_stock = stock > 0
+
+    from app import database as db_module
+    local = db_module.get_product_local(product_id)
+
+    price_changed = local is not None and abs((local.get("price_final") or 0) - pricing["final"]) > 0.01
+    stock_changed = local is not None and (local.get("stock") or 0) != stock
+
+    # Persist fresh data to local DB
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    db_module.refresh_product_from_api(
+        product_id, data.get("price", pricing["final"]), pricing["final"],
+        stock, in_stock, now
+    )
+
+    result = {
+        "verified":       True,
+        "product_id":     product_id,
+        "name":           data.get("name", ""),
+        "price_live":     pricing["final"],
+        "price_original": pricing["original"],
+        "has_discount":   pricing["has_discount"],
+        "stock_live":     stock,
+        "in_stock":       in_stock,
+        "price_changed":  price_changed,
+        "stock_changed":  stock_changed,
+        "checked_at":     now,
+    }
+    if price_changed:
+        result["price_local"]   = local.get("price_final")
+        result["price_message"] = (
+            f"Prix mis à jour : {local.get('price_final')} → {pricing['final']} TND"
+        )
+    if stock_changed:
+        result["stock_local"]   = local.get("stock")
+        result["stock_message"] = (
+            f"Stock mis à jour : {local.get('stock')} → {stock} unité(s)"
+        )
+    if not in_stock:
+        result["warning"] = "Ce produit est actuellement en rupture de stock."
+
+    return result
 
 
 def get_pending_orders(phone: str) -> dict:
@@ -1126,9 +1356,11 @@ def escalate_to_human(reason: str, summary: str, session_id: str = "", customer:
 # ── Dispatcher ─────────────────────────────────────────────────────────────────
 
 TOOL_HANDLERS = {
-    "get_customer_profile":  lambda a: get_customer_profile(**a),
-    "get_pending_orders":    lambda a: get_pending_orders(**a),
-    "get_delivery_info":     lambda a: get_delivery_info(**a),
+    "get_customer_profile":      lambda a: get_customer_profile(**a),
+    "get_recommended_products":  lambda a: get_recommended_products(**a),
+    "verify_product_live":       lambda a: verify_product_live(**a),
+    "get_pending_orders":        lambda a: get_pending_orders(**a),
+    "get_delivery_info":         lambda a: get_delivery_info(**a),
     "get_invoice":           lambda a: get_invoice(**a),
     "generate_quote":        lambda a: generate_quote(**a),
     "get_categories":        lambda a: get_categories(),

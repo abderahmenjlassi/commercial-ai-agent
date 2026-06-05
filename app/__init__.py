@@ -19,4 +19,9 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(webhook_bp)
 
+    # Auto-sync product catalog on startup + start periodic scheduler
+    from app import product_sync
+    product_sync.maybe_sync_on_startup()
+    product_sync.start_scheduler()
+
     return app

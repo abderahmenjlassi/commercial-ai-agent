@@ -29,3 +29,11 @@ class Config:
 
     # Webhook authentication
     WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "change-this-secret")
+
+    # Product catalog sync
+    # How many hours between automatic incremental syncs (0 = disable scheduler)
+    PRODUCT_SYNC_INTERVAL_HOURS = int(os.getenv("PRODUCT_SYNC_INTERVAL_HOURS", "6"))
+    # Max age (hours) before a startup sync is triggered on an existing catalog
+    PRODUCT_SYNC_STALE_HOURS    = int(os.getenv("PRODUCT_SYNC_STALE_HOURS", "12"))
+    # Max age (minutes) before prepare_order_recap re-checks live price/stock
+    PRODUCT_LIVE_CHECK_MINUTES  = int(os.getenv("PRODUCT_LIVE_CHECK_MINUTES", "60"))

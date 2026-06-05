@@ -1,12 +1,13 @@
 """
 Product catalog sync engine.
 Fetches all products from TikTakPro API and stores them in the local DB.
-Supports full sync and incremental updates.
+Supports full sync, incremental updates, and automatic background scheduling.
 """
 import json
+import time
 import threading
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import Config
 
 _state = {
@@ -139,6 +140,61 @@ def _run_sync(incremental: bool):
             _state["last_full_sync"] = now
 
     _log(f"Sync terminé : {_state['synced']} produits | {_state['new']} nouveaux | {_state['errors']} erreurs.")
+
+
+def maybe_sync_on_startup():
+    """
+    Called at app startup. Triggers:
+    - A full sync   if the products table is empty.
+    - An incremental sync if the catalog is older than PRODUCT_SYNC_STALE_HOURS.
+    - Nothing       if the catalog is recent enough.
+    Runs in a background daemon thread so it never blocks the app from starting.
+    """
+    def _check():
+        try:
+            from app import database as db
+            with db.get_conn() as conn:
+                count    = conn.execute("SELECT COUNT(*) FROM products WHERE active=1").fetchone()[0]
+                last_row = conn.execute("SELECT MAX(synced_at) FROM products").fetchone()
+                last_sync = last_row[0] if last_row and last_row[0] else None
+
+            if count == 0:
+                _log("Catalogue vide → sync complet automatique au démarrage.")
+                start_sync(incremental=False)
+                return
+
+            if last_sync:
+                age = datetime.now() - datetime.strptime(last_sync[:19], "%Y-%m-%d %H:%M:%S")
+                if age > timedelta(hours=Config.PRODUCT_SYNC_STALE_HOURS):
+                    _log(f"Catalogue obsolète ({int(age.total_seconds()//3600)}h) → sync incrémental au démarrage.")
+                    start_sync(incremental=True)
+                    return
+
+            _log(f"Catalogue OK ({count} produits, dernier sync : {last_sync[:16]}).")
+        except Exception as e:
+            _log(f"Erreur startup check: {e}")
+
+    threading.Thread(target=_check, daemon=True).start()
+
+
+def start_scheduler():
+    """
+    Start a background thread that triggers incremental syncs at the interval
+    defined by Config.PRODUCT_SYNC_INTERVAL_HOURS. Set to 0 to disable.
+    """
+    interval = Config.PRODUCT_SYNC_INTERVAL_HOURS
+    if interval <= 0:
+        return
+
+    def _loop():
+        while True:
+            time.sleep(interval * 3600)
+            _log(f"Sync planifié (intervalle {interval}h) → démarrage sync incrémental.")
+            start_sync(incremental=True)
+
+    t = threading.Thread(target=_loop, daemon=True, name="product-sync-scheduler")
+    t.start()
+    _log(f"Scheduleur de sync démarré — intervalle : {interval}h.")
 
 
 def _sync_product(p: dict, db) -> bool:

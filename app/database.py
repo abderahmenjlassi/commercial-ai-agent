@@ -547,6 +547,18 @@ def get_all_categories_local() -> list:
                 for r in rows]
 
 
+def refresh_product_from_api(product_id: int, price: float, price_final: float,
+                             stock: int, in_stock: bool, synced_at: str = None) -> None:
+    """Patch a product's price and stock in the local DB after a live API check."""
+    now = synced_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with get_conn() as conn:
+        conn.execute("""
+            UPDATE products
+            SET price = ?, price_final = ?, stock = ?, in_stock = ?, synced_at = ?
+            WHERE id = ?
+        """, (price, price_final, stock, 1 if in_stock else 0, now, product_id))
+
+
 def get_product_catalog_stats() -> dict:
     with get_conn() as conn:
         total    = conn.execute("SELECT COUNT(*) FROM products WHERE active=1").fetchone()[0]

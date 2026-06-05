@@ -161,6 +161,32 @@ def fulfillment_transitions():
     })
 
 
+# ── Product catalog sync ──────────────────────────────────────────────────────
+
+@admin_bp.route("/api/admin/products/sync", methods=["POST"])
+def products_sync_start():
+    from app import product_sync
+    body        = request.get_json(silent=True) or {}
+    incremental = body.get("incremental", False)
+    started     = product_sync.start_sync(incremental=incremental)
+    return jsonify({
+        "started": started,
+        "message": ("Sync lancé." if started else "Sync déjà en cours."),
+        "mode":    "incrémental" if incremental else "complet",
+    })
+
+
+@admin_bp.route("/api/admin/products/sync/status")
+def products_sync_status():
+    from app import product_sync
+    return jsonify(product_sync.get_status())
+
+
+@admin_bp.route("/api/admin/products/stats")
+def products_catalog_stats():
+    return jsonify(db.get_product_catalog_stats())
+
+
 # ── Import ────────────────────────────────────────────────────────────────────
 
 @admin_bp.route("/api/admin/import/start", methods=["POST"])
