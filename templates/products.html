@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catalogue Produits — TuniOptique</title>
+  <style>
+    :root{
+      --bg:#0d1117; --surface:#161b22; --surface2:#1c2128; --border:#30363d;
+      --text:#e6edf3; --muted:#8b949e; --muted2:#6e7681;
+      --green:#3fb950; --blue:#58a6ff; --orange:#f0883e;
+      --yellow:#e3b341; --purple:#bc8cff; --red:#f85149;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+    /* ── Topbar ── */
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200}
+    .topbar-logo{font-size:22px}
+    .topbar-title{font-size:16px;font-weight:700}
+    .topbar-sub{font-size:11px;color:var(--muted);margin-top:1px}
+    .topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .btn{border:none;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s}
+    .btn:hover:not(:disabled){opacity:.85} .btn:disabled{opacity:.4;cursor:default}
+    .btn-green{background:#238636;color:#fff}
+    .btn-blue{background:#1f6feb;color:#fff}
+    .btn-red{background:#da3633;color:#fff}
+    .btn-gray{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-sm{padding:5px 12px;font-size:11px}
+
+    /* ── Stats bar ── */
+    .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+    .stat-card{text-align:center}
+    .stat-num{font-size:22px;font-weight:800}
+    .stat-num.blue{color:var(--blue)}
+    .stat-num.green{color:var(--green)}
+    .stat-num.red{color:var(--red)}
+    .stat-num.orange{color:var(--orange)}
+    .stat-num.purple{color:var(--purple)}
+    .stat-label{font-size:10.5px;color:var(--muted);margin-top:2px}
+
+    /* ── Sync panel ── */
+    .sync-panel{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px}
+    .sync-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .sync-info{font-size:12px;color:var(--muted);flex:1}
+    .sync-log{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--muted);font-family:monospace;max-height:100px;overflow-y:auto;margin-top:8px;white-space:pre-wrap;display:none}
+    .sync-log.visible{display:block}
+    .progress-track{background:#21262d;border-radius:4px;height:6px;overflow:hidden;margin-top:6px;display:none}
+    .progress-track.visible{display:block}
+    .progress-fill{height:100%;background:linear-gradient(90deg,#1f6feb,#58a6ff);border-radius:4px;transition:width .3s}
+
+    /* ── Filters ── */
+    .filters{padding:12px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border)}
+    .fi{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:12.5px;outline:none}
+    .fi:focus{border-color:var(--blue)}
+    .fi::placeholder{color:var(--muted)}
+    .fi-search{flex:1;min-width:200px}
+    select.fi{min-width:160px}
+    .filter-count{margin-left:auto;font-size:12px;color:var(--muted)}
+
+    /* ── Product grid ── */
+    .grid-wrap{padding:20px 24px}
+    .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+    .product-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s}
+    .product-card:hover{border-color:var(--blue);transform:translateY(-2px)}
+    .product-card.out-of-stock{opacity:.6}
+    .pc-img{width:100%;height:150px;object-fit:contain;background:#141d24;padding:8px}
+    .pc-body{padding:10px 12px}
+    .pc-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .pc-cat{font-size:10.5px;color:var(--muted);margin-bottom:6px}
+    .pc-price-row{display:flex;align-items:center;gap:8px}
+    .pc-price{font-size:15px;font-weight:800;color:var(--green)}
+    .pc-price-orig{font-size:11px;color:var(--muted);text-decoration:line-through}
+    .pc-discount{font-size:10px;font-weight:700;color:#fff;background:var(--red);padding:1px 5px;border-radius:4px}
+    .pc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #21262d}
+    .pc-stock{font-size:11px}
+    .pc-stock.in{color:var(--green)}
+    .pc-stock.out{color:var(--red)}
+    .pc-sold{font-size:10.5px;color:var(--muted)}
+
+    /* ── Pagination ── */
+    .pagination{display:flex;justify-content:center;align-items:center;gap:8px;padding:20px 24px}
+    .page-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+    .page-btn:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+    .page-btn:disabled{opacity:.35;cursor:default}
+    .page-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .page-info{font-size:12px;color:var(--muted)}
+
+    /* ── Empty state ── */
+    .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+    .empty .icon{font-size:48px;margin-bottom:12px}
+    .empty p{font-size:14px}
+
+    /* ── Modal ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:720px;flex-shrink:0}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+    .modal-title{font-size:16px;font-weight:700;color:var(--text)}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+    .modal-close:hover{color:var(--text)}
+    .modal-body{padding:20px}
+
+    /* Modal content layout */
+    .m-split{display:grid;grid-template-columns:200px 1fr;gap:20px;margin-bottom:16px}
+    .m-img{width:200px;height:200px;object-fit:contain;background:#141d24;border-radius:8px;padding:10px}
+    .m-info{display:flex;flex-direction:column;gap:8px}
+    .m-name{font-size:18px;font-weight:700;color:var(--text);line-height:1.3}
+    .m-cat{font-size:12px;color:var(--muted)}
+    .m-price-big{font-size:26px;font-weight:800;color:var(--green)}
+    .m-price-orig{font-size:13px;color:var(--muted);text-decoration:line-through}
+    .m-discount-badge{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px}
+    .m-stock-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px}
+    .m-stock-pill.in{background:#1a3d1a;color:var(--green)}
+    .m-stock-pill.out{background:#3d1a1a;color:var(--red)}
+
+    .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0d1117;border-radius:8px;padding:12px;margin-bottom:14px}
+    .m-field-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+    .m-field-val{font-size:13px;color:var(--text);margin-top:2px}
+
+    .m-section-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px}
+    .m-desc{font-size:13px;color:#c9d1d9;line-height:1.7;background:#0d1117;border-radius:6px;padding:10px}
+    .features-wrap{display:flex;flex-wrap:wrap;gap:6px}
+    .feature-chip{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-size:11px;color:var(--muted)}
+
+    .variants-table{width:100%;border-collapse:collapse;font-size:12px}
+    .variants-table th{color:var(--muted);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--border);text-align:left}
+    .variants-table td{padding:6px 8px;color:#c9d1d9;border-bottom:1px solid #21262d}
+    .variants-table tr:last-child td{border-bottom:none}
+
+    /* Related products strip */
+    .related-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .related-card{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:8px;cursor:pointer;text-align:center;transition:border-color .15s}
+    .related-card:hover{border-color:var(--blue)}
+    .related-card img{width:60px;height:60px;object-fit:contain;background:#141d24;border-radius:4px;padding:4px}
+    .related-card .r-name{font-size:11px;color:var(--text);margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+    .related-card .r-price{font-size:12px;font-weight:700;color:var(--green);margin-top:3px}
+
+    /* ── Responsive ── */
+    @media(max-width:600px){
+      .stats-bar{grid-template-columns:repeat(3,1fr)}
+      .m-split{grid-template-columns:1fr}
+      .m-img{width:100%;height:160px}
+      .related-strip{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <div class="topbar-logo">🔭</div>
+  <div>
+    <div class="topbar-title">TuniOptique — Catalogue Produits</div>
+    <div class="topbar-sub">Gestion du catalogue local</div>
+  </div>
+  <div class="topbar-right">
+    <a href="/admin" class="btn btn-gray btn-sm">📊 Dashboard</a>
+    <a href="/fulfillment" class="btn btn-blue btn-sm">🚚 Fulfillment</a>
+    <a href="/" class="btn btn-green btn-sm">💬 Chat</a>
+  </div>
+</div>
+
+<!-- ── Catalog stats ── -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-card"><div class="stat-num blue" id="s-total">—</div><div class="stat-label">Produits actifs</div></div>
+  <div class="stat-card"><div class="stat-num green" id="s-instock">—</div><div class="stat-label">En stock</div></div>
+  <div class="stat-card"><div class="stat-num red" id="s-outstock">—</div><div class="stat-label">Hors stock</div></div>
+  <div class="stat-card"><div class="stat-num orange" id="s-cats">—</div><div class="stat-label">Catégories</div></div>
+  <div class="stat-card"><div class="stat-num purple" id="s-sync" style="font-size:13px;margin-top:2px">—</div><div class="stat-label">Dernier sync</div></div>
+</div>
+
+<!-- ── Sync panel ── -->
+<div class="sync-panel">
+  <div class="sync-row">
+    <span class="sync-info" id="sync-info">Chargement du statut sync…</span>
+    <button class="btn btn-blue btn-sm" onclick="triggerSync(false)">↻ Sync complet</button>
+    <button class="btn btn-gray btn-sm" onclick="triggerSync(true)">↻ Sync incrémental</button>
+    <button class="btn btn-gray btn-sm" onclick="toggleSyncLog()">📋 Logs</button>
+  </div>
+  <div class="progress-track" id="sync-progress-track">
+    <div class="progress-fill" id="sync-progress-fill" style="width:0%"></div>
+  </div>
+  <div class="sync-log" id="sync-log"></div>
+</div>
+
+<!-- ── Filters ── -->
+<div class="filters">
+  <input class="fi fi-search" id="search-input" type="search" placeholder="Rechercher un produit…" oninput="debounceSearch()">
+  <select class="fi" id="cat-select" onchange="applyFilters()">
+    <option value="">Toutes les catégories</option>
+  </select>
+  <select class="fi" id="stock-select" onchange="applyFilters()">
+    <option value="">Tout le stock</option>
+    <option value="1">En stock seulement</option>
+    <option value="0">Hors stock seulement</option>
+  </select>
+  <select class="fi" id="per-page-select" onchange="applyFilters()">
+    <option value="24">24 / page</option>
+    <option value="48">48 / page</option>
+    <option value="96">96 / page</option>
+  </select>
+  <span class="filter-count" id="filter-count"></span>
+</div>
+
+<!-- ── Grid ── -->
+<div class="grid-wrap">
+  <div class="product-grid" id="product-grid">
+    <div class="empty"><div class="icon">📦</div><p>Chargement…</p></div>
+  </div>
+</div>
+
+<!-- ── Pagination ── -->
+<div class="pagination" id="pagination"></div>
+
+<!-- ── Product detail modal ── -->
+<div class="modal-overlay" id="modal" onclick="closeModalOnBg(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Détail produit</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="empty"><div class="icon">⏳</div><p>Chargement…</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentPage = 1;
+let totalPages  = 1;
+let searchTimer = null;
+let syncPollTimer = null;
+let categories  = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadStats(), loadCategories(), loadSyncStatus()]);
+  loadProducts();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const r = await fetch('/api/admin/products/stats');
+  const d = await r.json();
+  document.getElementById('s-total').textContent   = d.total_products ?? '—';
+  document.getElementById('s-instock').textContent = d.in_stock ?? '—';
+  document.getElementById('s-outstock').textContent= d.out_of_stock ?? '—';
+  document.getElementById('s-cats').textContent    = d.categories ?? '—';
+  const sync = (d.last_sync||'Jamais').slice(0,16);
+  document.getElementById('s-sync').textContent = sync;
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+async function loadCategories() {
+  // derive from first products fetch — for now build from stats
+  // We'll load categories via a dedicated approach
+  try {
+    const r = await fetch('/api/admin/products?limit=1');
+    // categories come from the DB; we'll populate via a separate inferred call
+  } catch(e) {}
+
+  // Populate select with cached categories (will fill after first product load)
+}
+
+function populateCategorySelect(cats) {
+  const sel = document.getElementById('cat-select');
+  const cur = sel.value;
+  // keep first option
+  while (sel.options.length > 1) sel.remove(1);
+  cats.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `${c.name} (${c.product_count})`;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+// ── Products ──────────────────────────────────────────────────────────────────
+async function loadProducts() {
+  const q        = document.getElementById('search-input').value.trim();
+  const category = document.getElementById('cat-select').value;
+  const stockRaw = document.getElementById('stock-select').value;
+  const limit    = parseInt(document.getElementById('per-page-select').value, 10);
+
+  const params = new URLSearchParams({ page: currentPage, limit });
+  if (q)        params.set('q', q);
+  if (category) params.set('category', category);
+  if (stockRaw === '1') params.set('in_stock', '1');
+
+  document.getElementById('product-grid').innerHTML =
+    `<div class="empty"><div class="icon">⏳</div><p>Chargement…</p></div>`;
+
+  const r = await fetch('/api/admin/products?' + params);
+  const d = await r.json();
+
+  totalPages = d.pages || 1;
+  const total= d.total || 0;
+  document.getElementById('filter-count').textContent =
+    `${total} produit${total!==1?'s':''}`;
+
+  renderGrid(d.products || [], stockRaw);
+  renderPagination();
+
+  // Fetch categories from first load
+  if (!categories.length && d.products && d.products.length) {
+    fetchCategories();
+  }
+}
+
+async function fetchCategories() {
+  // Build category list from DB via products endpoint with huge limit
+  const r = await fetch('/api/admin/products?limit=1');
+  // Not ideal — let's call the stats endpoint which gives category count
+  // We'll hit the products endpoint to get a distinct list another way
+  // For now let's derive from a simple approach: re-fetch with no filter
+  // and build from results. Instead, call products/stats and inline categories.
+
+  // Actually, since the DB has get_all_categories_local(), let's add a route
+  // but since we don't have one, we'll lazy-build from product data.
+  // Workaround: fetch all categories via a dedicated hidden endpoint
+  // We'll use a general approach by fetching the first 200 products
+  const r2 = await fetch('/api/admin/products?limit=200');
+  const d  = await r2.json();
+  const catMap = {};
+  (d.products||[]).forEach(p => {
+    if (p.category_id && p.category_name) {
+      if (!catMap[p.category_id]) {
+        catMap[p.category_id] = { id: p.category_id, name: p.category_name, product_count: 0 };
+      }
+      catMap[p.category_id].product_count++;
+    }
+  });
+  categories = Object.values(catMap).sort((a,b) => b.product_count - a.product_count);
+  populateCategorySelect(categories);
+}
+
+function renderGrid(products, stockFilter) {
+  const grid = document.getElementById('product-grid');
+  if (!products.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="icon">🔍</div><p>Aucun produit trouvé.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  products.forEach(p => {
+    // Apply out-of-stock filter client-side if needed
+    if (stockFilter === '0' && p.in_stock) return;
+
+    const hasDiscount = p.has_discount && p.price > p.price_final;
+    const discPct = hasDiscount
+      ? Math.round((1 - p.price_final / p.price) * 100) : 0;
+    const stockLabel = p.in_stock
+      ? `✓ En stock (${p.stock})` : '✗ Hors stock';
+
+    const card = document.createElement('div');
+    card.className = `product-card${!p.in_stock?' out-of-stock':''}`;
+    card.onclick = () => openProduct(p.id);
+    card.innerHTML = `
+      <img class="pc-img" src="${esc(p.photo||p.photo_thumb||'')}" alt="${esc(p.name)}"
+           onerror="this.src='';this.style.background='#141d24'">
+      <div class="pc-body">
+        <div class="pc-name">${esc(p.name)}</div>
+        <div class="pc-cat">${esc(p.category_name||'—')}</div>
+        <div class="pc-price-row">
+          <span class="pc-price">${fmtPrice(p.price_final)}</span>
+          ${hasDiscount ? `<span class="pc-price-orig">${fmtPrice(p.price)}</span>
+            <span class="pc-discount">-${discPct}%</span>` : ''}
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock ${p.in_stock?'in':'out'}">${stockLabel}</span>
+          ${p.sold ? `<span class="pc-sold">${p.sold} vendus</span>` : ''}
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+function renderPagination() {
+  const pag = document.getElementById('pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹ Préc.</button>`;
+
+  const range = pageRange(currentPage, totalPages);
+  range.forEach(p => {
+    if (p === '…') {
+      html += `<span class="page-info">…</span>`;
+    } else {
+      html += `<button class="page-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+    }
+  });
+
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>Suiv. ›</button>`;
+  html += `<span class="page-info">Page ${currentPage} / ${totalPages}</span>`;
+  pag.innerHTML = html;
+}
+
+function pageRange(cur, total) {
+  if (total <= 7) return Array.from({length:total},(_,i)=>i+1);
+  const pages = [];
+  if (cur <= 4) {
+    for(let i=1;i<=5;i++) pages.push(i);
+    pages.push('…'); pages.push(total);
+  } else if (cur >= total - 3) {
+    pages.push(1); pages.push('…');
+    for(let i=total-4;i<=total;i++) pages.push(i);
+  } else {
+    pages.push(1); pages.push('…');
+    pages.push(cur-1); pages.push(cur); pages.push(cur+1);
+    pages.push('…'); pages.push(total);
+  }
+  return pages;
+}
+
+function goPage(p) {
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  loadProducts();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function applyFilters() {
+  currentPage = 1;
+  loadProducts();
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 350);
+}
+
+// ── Product detail modal ───────────────────────────────────────────────────────
+async function openProduct(id) {
+  document.getElementById('modal-title').textContent = 'Chargement…';
+  document.getElementById('modal-body').innerHTML =
+    `<div class="empty"><div class="icon">⏳</div><p>Chargement…</p></div>`;
+  document.getElementById('modal').classList.add('open');
+
+  const r = await fetch(`/api/admin/products/${id}`);
+  const d = await r.json();
+  if (d.error) {
+    document.getElementById('modal-body').innerHTML =
+      `<div class="empty"><div class="icon">❌</div><p>${esc(d.error)}</p></div>`;
+    return;
+  }
+  renderModal(d.product, d.related || []);
+}
+
+function renderModal(p, related) {
+  document.getElementById('modal-title').textContent = p.name;
+
+  const hasDiscount = p.has_discount && p.price > p.price_final;
+  const discPct = hasDiscount ? Math.round((1 - p.price_final / p.price) * 100) : 0;
+  const syncAge = p.synced_at ? timeSince(p.synced_at) : 'jamais';
+
+  let variantsHtml = '';
+  if (p.variants && p.variants.length) {
+    variantsHtml = `
+      <div class="m-section-title">Déclinaisons</div>
+      <table class="variants-table">
+        <thead><tr><th>Variante</th><th style="text-align:right">Prix</th><th style="text-align:right">Stock</th></tr></thead>
+        <tbody>${p.variants.map(v=>`<tr>
+          <td>${esc(v.name||'—')}</td>
+          <td style="text-align:right;color:var(--green)">${v.price!=null?fmtPrice(v.price):'—'}</td>
+          <td style="text-align:right">${v.stock??'—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  }
+
+  let featuresHtml = '';
+  if (p.features && p.features.length) {
+    featuresHtml = `
+      <div class="m-section-title">Caractéristiques</div>
+      <div class="features-wrap">
+        ${p.features.map(f=>`<span class="feature-chip">${esc(f)}</span>`).join('')}
+      </div>`;
+  }
+
+  let relatedHtml = '';
+  if (related && related.length) {
+    relatedHtml = `
+      <div class="m-section-title">Produits similaires</div>
+      <div class="related-strip">
+        ${related.map(r=>`
+          <div class="related-card" onclick="openProduct(${r.id})">
+            <img src="${esc(r.photo_thumb||r.photo||'')}" alt="${esc(r.name)}"
+                 onerror="this.style.display='none'">
+            <div class="r-name">${esc(r.name)}</div>
+            <div class="r-price">${fmtPrice(r.price_final)}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="m-split">
+      <img class="m-img" src="${esc(p.photo||p.photo_thumb||'')}" alt="${esc(p.name)}"
+           onerror="this.src='';this.style.background='#141d24'">
+      <div class="m-info">
+        <div class="m-name">${esc(p.name)}</div>
+        <div class="m-cat">📂 ${esc(p.category_name||'—')}</div>
+        <div>
+          <div class="m-price-big">${fmtPrice(p.price_final)}</div>
+          ${hasDiscount ? `
+            <div class="m-price-orig">${fmtPrice(p.price)}</div>
+            <span class="m-discount-badge">-${discPct}% de réduction</span>` : ''}
+        </div>
+        <div>
+          <span class="m-stock-pill ${p.in_stock?'in':'out'}">
+            ${p.in_stock ? `✓ En stock — ${p.stock} unités` : '✗ Hors stock'}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="m-grid">
+      <div><div class="m-field-label">ID produit</div><div class="m-field-val">#${p.id}</div></div>
+      <div><div class="m-field-label">Référence (slug)</div><div class="m-field-val">${esc(p.seo_slug||'—')}</div></div>
+      <div><div class="m-field-label">Prix HT</div><div class="m-field-val">${fmtPrice(p.price_ht)}</div></div>
+      <div><div class="m-field-label">TVA</div><div class="m-field-val">${p.taxe_rate||0} %</div></div>
+      <div><div class="m-field-label">Remise</div><div class="m-field-val">${p.discount||0} ${p.discount_type==='percentage'?'%':'TND'}</div></div>
+      <div><div class="m-field-label">Vendus</div><div class="m-field-val">${p.sold||0}</div></div>
+      <div><div class="m-field-label">Sync API</div><div class="m-field-val" title="${p.synced_at||''}">${syncAge}</div></div>
+      <div><div class="m-field-label">Màj API</div><div class="m-field-val">${(p.api_updated_at||'—').slice(0,16)}</div></div>
+    </div>
+
+    ${p.description ? `
+      <div class="m-section-title">Description</div>
+      <div class="m-desc">${esc(p.description)}</div>` : ''}
+
+    ${featuresHtml}
+    ${variantsHtml}
+    ${relatedHtml}`;
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function closeModalOnBg(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+async function loadSyncStatus() {
+  const r = await fetch('/api/admin/products/sync/status');
+  const d = await r.json();
+  renderSyncStatus(d);
+}
+
+function renderSyncStatus(s) {
+  const info = document.getElementById('sync-info');
+  const track= document.getElementById('sync-progress-track');
+  const fill = document.getElementById('sync-progress-fill');
+  const log  = document.getElementById('sync-log');
+
+  if (s.running) {
+    const pct = s.total > 0 ? Math.round(s.synced / s.total * 100) : 0;
+    info.textContent = `⏳ Sync en cours… ${s.synced}/${s.total} produits (${pct}%)`;
+    track.classList.add('visible');
+    fill.style.width = pct + '%';
+    if (!syncPollTimer) startSyncPolling();
+  } else if (s.done) {
+    info.textContent = `✅ Dernier sync : ${s.finished_at||''} — ${s.synced} produits (${s.new} nouveaux, ${s.updated} mis à jour, ${s.errors} erreurs)`;
+    track.classList.remove('visible');
+    stopSyncPolling();
+  } else {
+    info.textContent = 'Aucun sync récent.';
+    track.classList.remove('visible');
+  }
+
+  if (s.log && s.log.length) {
+    log.textContent = s.log.slice(-50).join('\n');
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function startSyncPolling() {
+  syncPollTimer = setInterval(async () => {
+    const r = await fetch('/api/admin/products/sync/status');
+    const d = await r.json();
+    renderSyncStatus(d);
+    if (!d.running) {
+      stopSyncPolling();
+      loadStats();
+      loadProducts();
+    }
+  }, 2000);
+}
+
+function stopSyncPolling() {
+  if (syncPollTimer) { clearInterval(syncPollTimer); syncPollTimer = null; }
+}
+
+async function triggerSync(incremental) {
+  const r = await fetch('/api/admin/products/sync', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ incremental }),
+  });
+  const d = await r.json();
+  document.getElementById('sync-info').textContent = d.message || '…';
+  if (d.started) {
+    document.getElementById('sync-log').classList.add('visible');
+    startSyncPolling();
+  }
+}
+
+function toggleSyncLog() {
+  const log = document.getElementById('sync-log');
+  log.classList.toggle('visible');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function fmtPrice(v) {
+  const n = parseFloat(v) || 0;
+  return n.toFixed(n % 1 === 0 ? 0 : 2) + ' TND';
+}
+
+function timeSince(dtStr) {
+  if (!dtStr) return '—';
+  const diff = (Date.now() - new Date(dtStr).getTime()) / 1000;
+  if (diff < 60)   return 'à l\'instant';
+  if (diff < 3600) return `il y a ${Math.floor(diff/60)} min`;
+  if (diff < 86400)return `il y a ${Math.floor(diff/3600)} h`;
+  return `il y a ${Math.floor(diff/86400)} j`;
+}
+
+// ── Keyboard shortcut ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

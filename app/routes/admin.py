@@ -161,6 +161,66 @@ def fulfillment_transitions():
     })
 
 
+# ── Products (admin browse) ───────────────────────────────────────────────────
+
+@admin_bp.route("/demo")
+def demo_page():
+    return render_template("demo.html")
+
+
+@admin_bp.route("/admin/products")
+def products_page():
+    return render_template("products.html")
+
+
+@admin_bp.route("/api/admin/products")
+def list_products():
+    q        = request.args.get("q", "")
+    category = request.args.get("category", type=int)
+    in_stock = request.args.get("in_stock") == "1"
+    limit    = min(int(request.args.get("limit", 24)), 100)
+    page     = max(1, int(request.args.get("page", 1)))
+    offset   = (page - 1) * limit
+
+    with db.get_conn() as conn:
+        conds  = ["active = 1"]
+        params = []
+        if category:
+            conds.append("category_id = ?")
+            params.append(category)
+        if in_stock:
+            conds.append("stock > 0")
+        if q:
+            nq = f"%{db._sqlite_normalize(q)}%"
+            conds.append("(normalize(name) LIKE ? OR normalize(category_name) LIKE ? OR normalize(description) LIKE ?)")
+            params.extend([nq, nq, nq])
+
+        where  = " AND ".join(conds)
+        total  = conn.execute(f"SELECT COUNT(*) FROM products WHERE {where}", params).fetchone()[0]
+        rows   = conn.execute(
+            f"SELECT * FROM products WHERE {where} ORDER BY sold DESC, name ASC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+
+    products = [db._product_row_to_dict(r) for r in rows]
+    return jsonify({
+        "products": products,
+        "total":    total,
+        "page":     page,
+        "pages":    max(1, (total + limit - 1) // limit),
+        "limit":    limit,
+    })
+
+
+@admin_bp.route("/api/admin/products/<int:product_id>")
+def get_product_detail(product_id):
+    p = db.get_product_local(product_id)
+    if not p:
+        return jsonify({"error": "Produit introuvable"}), 404
+    related = db.get_products_by_category(p.get("category_id"), exclude_id=product_id, limit=4)
+    return jsonify({"product": p, "related": related})
+
+
 # ── Product catalog sync ──────────────────────────────────────────────────────
 
 @admin_bp.route("/api/admin/products/sync", methods=["POST"])

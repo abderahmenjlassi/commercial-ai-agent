@@ -4,10 +4,18 @@ Centralises customers, orders, and order_items.
 Product prices are never stored — always fetched live from TikTakPro API.
 """
 import sqlite3
+import unicodedata
 from pathlib import Path
 from datetime import datetime
 
 DB_PATH = Path(__file__).parent.parent / "data" / "tunioptique.db"
+
+
+def _sqlite_normalize(s: str) -> str:
+    """Strip accents and lowercase — registered as a SQLite scalar function."""
+    if s is None:
+        return ""
+    return unicodedata.normalize("NFD", str(s)).encode("ascii", "ignore").decode("ascii").lower()
 
 
 def get_conn() -> sqlite3.Connection:
@@ -15,6 +23,7 @@ def get_conn() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.create_function("normalize", 1, _sqlite_normalize)
     return conn
 
 
@@ -441,24 +450,25 @@ def search_products_local(query: str = "", category_id: int = None,
         base_where = " AND ".join(conditions)
 
         if query:
-            q = f"%{query}%"
-            # Score: 3 = name contains, 2 = category contains, 1 = description contains
+            # normalize() strips accents + lowercases — handles télescope/telescope etc.
+            nq = f"%{_sqlite_normalize(query)}%"
             sql = f"""
                 SELECT *,
                   CASE
-                    WHEN LOWER(name)           LIKE LOWER(?) THEN 3
-                    WHEN LOWER(category_name)  LIKE LOWER(?) THEN 2
-                    WHEN LOWER(description)    LIKE LOWER(?) THEN 1
+                    WHEN normalize(name)          LIKE ? THEN 3
+                    WHEN normalize(category_name) LIKE ? THEN 2
+                    WHEN normalize(description)   LIKE ? THEN 1
                     ELSE 0
                   END AS relevance
                 FROM products
                 WHERE {base_where}
-                  AND (LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?)
-                       OR LOWER(category_name) LIKE LOWER(?))
+                  AND (normalize(name)          LIKE ?
+                    OR normalize(description)   LIKE ?
+                    OR normalize(category_name) LIKE ?)
                 ORDER BY relevance DESC, stock DESC, sold DESC
                 LIMIT ?
             """
-            params = [q, q, q] + params + [q, q, q, limit]
+            params = [nq, nq, nq] + params + [nq, nq, nq, limit]
         else:
             sql = f"""
                 SELECT *, 0 AS relevance FROM products

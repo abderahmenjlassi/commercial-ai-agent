@@ -13,7 +13,10 @@ const quickReplies = document.getElementById("quick-replies");
 // Widget mode: running inside an iframe embedded on a website
 const urlParams  = new URLSearchParams(window.location.search);
 const WIDGET_MODE = urlParams.get("widget") === "1";
-if (WIDGET_MODE) document.body.classList.add("widget-mode");
+if (WIDGET_MODE) {
+  document.documentElement.classList.add("widget-mode");
+  document.body.classList.add("widget-mode");
+}
 
 // Visitor ID: persistent UUID that survives page refreshes and server restarts.
 // Priority: URL param (passed by widget.js from parent page) > localStorage.

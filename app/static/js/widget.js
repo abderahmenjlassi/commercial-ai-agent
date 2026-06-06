@@ -96,10 +96,10 @@
         "border-radius:16px;overflow:hidden;",
         "box-shadow:0 8px 40px rgba(0,0,0,.45);",
         "z-index:2147483645;border:1px solid rgba(255,255,255,.08);",
-        "display:none;opacity:0;transform:translateY(12px);",
+        "opacity:0;transform:translateY(12px);pointer-events:none;",
         "transition:opacity .22s,transform .22s;",
       "}",
-      "#tuno-panel.tuno-open{display:block;opacity:1;transform:translateY(0)}",
+      "#tuno-panel.tuno-open{opacity:1;transform:translateY(0);pointer-events:auto}",
       "#tuno-panel iframe{width:100%;height:100%;border:none;display:block}",
       "@media(max-width:480px){",
         "#tuno-panel{width:100vw;height:100vh;bottom:0;" + side + ":0;border-radius:0}",
@@ -165,9 +165,12 @@
   // ── Panel open/close ─────────────────────────────────────────────────────
 
   function _openPanel() {
+    _panelEl.style.display = "";          // clear any inline display:none
     if (!_iframeEl.src) {
       _iframeEl.src = _buildChatUrl();
     }
+    // force reflow so the transition plays from the closed state
+    void _panelEl.offsetWidth;
     _panelEl.classList.add("tuno-open");
     _btnEl.innerHTML = ICON_CLOSE;
     _panelOpen = true;
@@ -176,9 +179,8 @@
 
   function _closePanel() {
     _panelEl.classList.remove("tuno-open");
-    setTimeout(function () {
-      if (!_panelOpen) _panelEl.style.display = "none";
-    }, 230);
+    // hide after transition ends — do NOT set inline display here
+    // (inline style would block the CSS class from showing the panel again)
     _btnEl.innerHTML = ICON_CHAT + '<span id="tuno-badge"></span>';
     _panelOpen = false;
     localStorage.setItem(OPEN_KEY, "0");

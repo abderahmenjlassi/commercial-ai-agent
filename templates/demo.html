@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TuniOptique — Simulation d'intégration du Chat</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       SIMULATED WEBSITE STYLES
+       (mimic a real optique e-commerce store)
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#f8f9fa; color:#222; }
+
+    /* ── Fake site navbar ── */
+    .site-nav {
+      background:#fff; border-bottom:1px solid #e5e7eb;
+      padding:0 40px; display:flex; align-items:center; gap:32px;
+      position:sticky; top:0; z-index:100; height:64px; box-shadow:0 1px 4px rgba(0,0,0,.06);
+    }
+    .site-logo { font-size:20px; font-weight:800; color:#1a56db; text-decoration:none; display:flex; align-items:center; gap:8px }
+    .site-logo span { color:#111 }
+    .site-links { display:flex; gap:24px; margin-left:24px }
+    .site-links a { font-size:14px; color:#374151; text-decoration:none; font-weight:500 }
+    .site-links a:hover { color:#1a56db }
+    .site-links a.active { color:#1a56db; border-bottom:2px solid #1a56db; padding-bottom:2px }
+    .nav-right { margin-left:auto; display:flex; gap:12px; align-items:center }
+    .btn-outline { border:1px solid #d1d5db; background:#fff; padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; color:#374151 }
+    .btn-primary { background:#1a56db; color:#fff; padding:8px 18px; border-radius:8px; font-size:13px; font-weight:600; border:none; cursor:pointer }
+    .btn-primary:hover { background:#1e40af }
+
+    /* ── Hero banner ── */
+    .hero {
+      background:linear-gradient(135deg, #1e3a5f 0%, #1a56db 60%, #0ea5e9 100%);
+      padding:64px 40px; color:#fff; display:flex; align-items:center; gap:48px;
+    }
+    .hero-text { flex:1 }
+    .hero-badge { display:inline-block; background:rgba(255,255,255,.2); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; margin-bottom:12px }
+    .hero h1 { font-size:36px; font-weight:800; line-height:1.2; margin-bottom:12px }
+    .hero p { font-size:16px; opacity:.85; max-width:480px; line-height:1.6 }
+    .hero-actions { display:flex; gap:12px; margin-top:24px }
+    .btn-hero { padding:12px 24px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; border:none }
+    .btn-hero-primary { background:#fff; color:#1a56db }
+    .btn-hero-outline { background:transparent; border:2px solid rgba(255,255,255,.5); color:#fff }
+    .hero-img { font-size:120px; opacity:.8 }
+
+    /* ── Category strip ── */
+    .cats { background:#fff; border-bottom:1px solid #e5e7eb; padding:0 40px; display:flex; gap:0 }
+    .cat-pill { padding:14px 20px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap }
+    .cat-pill:hover { color:#1a56db }
+    .cat-pill.active { color:#1a56db; border-bottom-color:#1a56db }
+
+    /* ── Main layout ── */
+    .main { max-width:1200px; margin:0 auto; padding:32px 24px }
+    .section-title { font-size:20px; font-weight:700; color:#111; margin-bottom:4px }
+    .section-sub { font-size:14px; color:#6b7280; margin-bottom:20px }
+
+    /* ── Product grid ── */
+    .product-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px; margin-bottom:48px }
+    .product-card {
+      background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;
+      cursor:pointer; transition:box-shadow .2s, transform .2s;
+    }
+    .product-card:hover { box-shadow:0 8px 24px rgba(0,0,0,.10); transform:translateY(-2px) }
+    .pc-img-wrap { height:180px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:64px; position:relative }
+    .pc-badge { position:absolute; top:10px; left:10px; background:#ef4444; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px }
+    .pc-body { padding:14px }
+    .pc-cat { font-size:11px; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px }
+    .pc-name { font-size:14px; font-weight:600; color:#111; line-height:1.4; margin-bottom:8px }
+    .pc-price-row { display:flex; align-items:center; gap:8px }
+    .pc-price { font-size:18px; font-weight:800; color:#1a56db }
+    .pc-price-old { font-size:13px; color:#9ca3af; text-decoration:line-through }
+    .pc-footer { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px solid #f3f4f6 }
+    .pc-stock-ok { font-size:12px; color:#16a34a; font-weight:600 }
+    .pc-stock-no { font-size:12px; color:#dc2626; font-weight:600 }
+    .btn-add { background:#1a56db; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer }
+    .btn-add:hover { background:#1e40af }
+
+    /* ── Promo banner ── */
+    .promo-band { background:linear-gradient(90deg,#7c3aed,#4f46e5); color:#fff; padding:20px 40px; display:flex; align-items:center; gap:24px; margin-bottom:40px; border-radius:12px }
+    .promo-band .promo-icon { font-size:36px }
+    .promo-band h3 { font-size:18px; font-weight:700 }
+    .promo-band p { font-size:14px; opacity:.85 }
+
+    /* ── Footer ── */
+    .site-footer { background:#1f2937; color:#9ca3af; padding:32px 40px; margin-top:48px; font-size:13px }
+    .footer-row { max-width:1200px; margin:0 auto; display:flex; gap:40px }
+    .footer-col h4 { color:#fff; font-size:14px; font-weight:600; margin-bottom:12px }
+    .footer-col a { display:block; color:#9ca3af; text-decoration:none; margin-bottom:6px }
+    .footer-col a:hover { color:#fff }
+
+    /* ═══════════════════════════════════════════════════════
+       TESTING PANEL (overlaid on top-left corner)
+    ═══════════════════════════════════════════════════════ */
+    #test-panel {
+      position:fixed; top:0; left:0; height:100vh; width:340px;
+      background:#0d1117; color:#e6edf3; z-index:9999;
+      display:flex; flex-direction:column;
+      box-shadow:4px 0 24px rgba(0,0,0,.5);
+      transform:translateX(-340px); transition:transform .25s;
+      font-size:12.5px;
+    }
+    #test-panel.open { transform:translateX(0) }
+
+    /* Toggle tab */
+    #panel-toggle {
+      position:fixed; top:50%; left:0; transform:translateY(-50%);
+      background:#1f6feb; color:#fff; border:none; cursor:pointer;
+      padding:12px 6px; border-radius:0 8px 8px 0; z-index:10000;
+      font-size:13px; font-weight:700; writing-mode:vertical-rl;
+      letter-spacing:1px; transition:left .25s;
+    }
+    #panel-toggle.shifted { left:340px }
+    #panel-toggle:hover { background:#388bfd }
+
+    .panel-header {
+      background:#161b22; border-bottom:1px solid #30363d;
+      padding:14px 16px; display:flex; align-items:center; gap:8px; flex-shrink:0;
+    }
+    .panel-header .ph-icon { font-size:18px }
+    .panel-header .ph-title { font-size:14px; font-weight:700 }
+    .panel-header .ph-sub { font-size:10.5px; color:#8b949e; margin-top:1px }
+    .panel-header a { margin-left:auto; font-size:11px; color:#58a6ff; text-decoration:none }
+
+    .panel-body { flex:1; overflow-y:auto; padding:14px }
+    .panel-body::-webkit-scrollbar { width:4px }
+    .panel-body::-webkit-scrollbar-thumb { background:#30363d; border-radius:2px }
+
+    .p-section { margin-bottom:16px }
+    .p-section-title {
+      font-size:10px; font-weight:700; color:#8b949e; text-transform:uppercase;
+      letter-spacing:.8px; margin-bottom:8px; display:flex; align-items:center; gap:6px;
+    }
+    .p-section-title::after { content:''; flex:1; height:1px; background:#21262d }
+
+    /* State rows */
+    .state-row { display:flex; align-items:flex-start; gap:8px; margin-bottom:6px }
+    .state-key { color:#8b949e; flex-shrink:0; width:100px }
+    .state-val { color:#e6edf3; word-break:break-all; flex:1; font-family:monospace; font-size:11.5px }
+    .state-val.green { color:#3fb950 }
+    .state-val.blue  { color:#58a6ff }
+    .state-val.orange{ color:#f0883e }
+    .state-val.red   { color:#f85149 }
+    .state-val.empty { color:#6e7681; font-style:italic }
+
+    /* Config inputs */
+    .cfg-row { margin-bottom:8px }
+    .cfg-label { font-size:11px; color:#8b949e; margin-bottom:3px }
+    .cfg-input {
+      width:100%; background:#21262d; border:1px solid #30363d; border-radius:5px;
+      padding:6px 8px; color:#e6edf3; font-size:12px; outline:none;
+    }
+    .cfg-input:focus { border-color:#58a6ff }
+    .cfg-row-split { display:flex; gap:6px }
+    .cfg-row-split .cfg-row { flex:1 }
+
+    /* Action buttons */
+    .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px }
+    .act-btn {
+      background:#21262d; border:1px solid #30363d; color:#e6edf3;
+      padding:7px 10px; border-radius:6px; font-size:11px; font-weight:600;
+      cursor:pointer; text-align:center; transition:background .15s;
+    }
+    .act-btn:hover { background:#30363d }
+    .act-btn.blue { background:#1f3a5f; border-color:#1f6feb; color:#58a6ff }
+    .act-btn.blue:hover { background:#1f6feb; color:#fff }
+    .act-btn.green { background:#1a3d1a; border-color:#238636; color:#3fb950 }
+    .act-btn.green:hover { background:#238636; color:#fff }
+    .act-btn.red { background:#3d1a1a; border-color:#da3633; color:#f85149 }
+    .act-btn.red:hover { background:#da3633; color:#fff }
+    .act-btn.orange { background:#3d2a1a; border-color:#9a4f10; color:#f0883e }
+
+    /* Event log */
+    .event-log {
+      background:#0d1117; border:1px solid #21262d; border-radius:6px;
+      padding:8px; max-height:160px; overflow-y:auto; font-family:monospace; font-size:11px;
+    }
+    .event-log::-webkit-scrollbar { width:3px }
+    .event-log::-webkit-scrollbar-thumb { background:#30363d }
+    .ev-line { margin-bottom:3px; line-height:1.5 }
+    .ev-time { color:#6e7681 }
+    .ev-type { font-weight:700 }
+    .ev-type.msg { color:#58a6ff }
+    .ev-type.open { color:#3fb950 }
+    .ev-type.close { color:#f85149 }
+    .ev-type.identified { color:#f0883e }
+    .ev-type.storage { color:#bc8cff }
+    .ev-body { color:#8b949e }
+
+    /* Embed code */
+    .code-box {
+      background:#0d1117; border:1px solid #30363d; border-radius:6px;
+      padding:10px; font-family:monospace; font-size:10.5px; color:#e6edf3;
+      white-space:pre-wrap; word-break:break-all; position:relative;
+    }
+    .copy-btn {
+      position:absolute; top:6px; right:6px;
+      background:#21262d; border:1px solid #30363d; border-radius:4px;
+      color:#8b949e; font-size:10px; padding:3px 8px; cursor:pointer;
+    }
+    .copy-btn:hover { color:#e6edf3 }
+
+    /* Scenario pills */
+    .scenario-list { display:flex; flex-direction:column; gap:6px }
+    .scenario {
+      background:#161b22; border:1px solid #30363d; border-radius:6px;
+      padding:8px 10px; cursor:pointer; transition:border-color .15s;
+    }
+    .scenario:hover { border-color:#58a6ff }
+    .scenario .sc-name { font-size:12px; font-weight:600; color:#e6edf3 }
+    .scenario .sc-desc { font-size:11px; color:#8b949e; margin-top:2px }
+
+    /* Toast */
+    #toast {
+      position:fixed; bottom:80px; right:24px; background:#238636; color:#fff;
+      padding:10px 18px; border-radius:8px; font-size:13px; font-weight:600;
+      z-index:20000; display:none; animation:fadeIn .2s;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SIMULATED E-COMMERCE WEBSITE
+═══════════════════════════════════════════════ -->
+
+<!-- Fake site navbar -->
+<nav class="site-nav">
+  <a class="site-logo" href="#">🔭 <span>TuniOptique</span></a>
+  <div class="site-links">
+    <a href="#" class="active">Accueil</a>
+    <a href="#">Télescopes</a>
+    <a href="#">Microscopes</a>
+    <a href="#">Lunettes</a>
+    <a href="#">Promotions</a>
+    <a href="#">Contact</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-outline">🔍 Rechercher</button>
+    <button class="btn-outline">🛒 Panier (0)</button>
+    <button class="btn-primary">Mon compte</button>
+  </div>
+</nav>
+
+<!-- Category strip -->
+<div class="cats">
+  <div class="cat-pill active">Tous les produits</div>
+  <div class="cat-pill">🔭 Télescopes</div>
+  <div class="cat-pill">🔬 Microscopes</div>
+  <div class="cat-pill">👓 Lunettes</div>
+  <div class="cat-pill">📷 Caméras</div>
+  <div class="cat-pill">⭐ Meilleures ventes</div>
+  <div class="cat-pill">🏷️ Promotions</div>
+</div>
+
+<!-- Hero section -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-badge">✨ Nouveau — Assistant IA disponible 24/7</div>
+    <h1>L'optique de précision<br>à votre portée</h1>
+    <p>Télescopes, microscopes, lunettes et instruments d'optique professionnels. Livraison rapide dans toute la Tunisie.</p>
+    <div class="hero-actions">
+      <button class="btn-hero btn-hero-primary">Découvrir le catalogue</button>
+      <button class="btn-hero btn-hero-outline">💬 Parlez à notre agent IA</button>
+    </div>
+  </div>
+  <div class="hero-img">🔭</div>
+</div>
+
+<!-- Main content -->
+<div class="main">
+
+  <!-- Promo band -->
+  <div class="promo-band">
+    <div class="promo-icon">🤖</div>
+    <div>
+      <h3>Besoin de conseils ? Notre agent IA est là !</h3>
+      <p>Cliquez sur le bouton de chat en bas à droite pour obtenir des recommandations personnalisées, suivre vos commandes et plus encore.</p>
+    </div>
+  </div>
+
+  <!-- Featured products -->
+  <div class="section-title">Produits phares</div>
+  <div class="section-sub">Sélection de nos meilleures ventes du moment</div>
+  <div class="product-grid">
+    <div class="product-card" onclick="askChat('Je cherche un télescope pour débuter')">
+      <div class="pc-img-wrap">🔭<div class="pc-badge">-20%</div></div>
+      <div class="pc-body">
+        <div class="pc-cat">Télescopes</div>
+        <div class="pc-name">Télescope Celestron StarSense Explorer LT 80AZ</div>
+        <div class="pc-price-row">
+          <span class="pc-price">649 TND</span>
+          <span class="pc-price-old">810 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ En stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card" onclick="askChat('Donnez-moi les détails du microscope numérique 1000X')">
+      <div class="pc-img-wrap">🔬</div>
+      <div class="pc-body">
+        <div class="pc-cat">Microscopes</div>
+        <div class="pc-name">Microscope numérique 8 LED zoom jusqu'à 1000X</div>
+        <div class="pc-price-row">
+          <span class="pc-price">189 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ En stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card" onclick="askChat('Je veux commander le Télescope astronomique avec trépied')">
+      <div class="pc-img-wrap">🌌<div class="pc-badge">Populaire</div></div>
+      <div class="pc-body">
+        <div class="pc-cat">Télescopes</div>
+        <div class="pc-name">Télescope astronomique, trépied réglable 145cm</div>
+        <div class="pc-price-row">
+          <span class="pc-price">320 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ 125 en stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card" onclick="askChat('Quelles lunettes d\'éclipse avez-vous ?')">
+      <div class="pc-img-wrap">☀️</div>
+      <div class="pc-body">
+        <div class="pc-cat">Lunettes</div>
+        <div class="pc-name">Lunette éclipse — Protection solaire certifiée</div>
+        <div class="pc-price-row">
+          <span class="pc-price">45 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ En stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card" onclick="askChat('Je cherche un microscope professionnel LCD')">
+      <div class="pc-img-wrap">🖥️</div>
+      <div class="pc-body">
+        <div class="pc-cat">Microscopes</div>
+        <div class="pc-name">Microscope Digital LCD 4.3" 1-1000X 10MP</div>
+        <div class="pc-price-row">
+          <span class="pc-price">485 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ En stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="product-card" onclick="askChat('Vous avez des caméras otoscopes ?')">
+      <div class="pc-img-wrap">📷</div>
+      <div class="pc-body">
+        <div class="pc-cat">Médical</div>
+        <div class="pc-name">Micro-Caméra Otoscope Sans Fil 1080P Kit Nettoyage</div>
+        <div class="pc-price-row">
+          <span class="pc-price">220 TND</span>
+        </div>
+        <div class="pc-footer">
+          <span class="pc-stock-ok">✓ En stock</span>
+          <button class="btn-add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Fake footer -->
+<footer class="site-footer">
+  <div class="footer-row">
+    <div class="footer-col">
+      <h4>🔭 TuniOptique</h4>
+      <p style="line-height:1.7;margin-top:4px">Votre spécialiste en instruments optiques et médicaux en Tunisie.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <a href="#">Télescopes</a>
+      <a href="#">Microscopes</a>
+      <a href="#">Lunettes</a>
+      <a href="#">Promotions</a>
+    </div>
+    <div class="footer-col">
+      <h4>Service client</h4>
+      <a href="#">Support chat IA</a>
+      <a href="#">Suivi commande</a>
+      <a href="#">Retours</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <a href="#">📞 +216 xx xxx xxx</a>
+      <a href="#">✉️ contact@tunioptique.tn</a>
+    </div>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     TESTING PANEL
+═══════════════════════════════════════════════ -->
+<button id="panel-toggle" onclick="togglePanel()">🧪 TEST</button>
+
+<div id="test-panel">
+  <div class="panel-header">
+    <span class="ph-icon">🧪</span>
+    <div>
+      <div class="ph-title">Panneau de test — Intégration Widget</div>
+      <div class="ph-sub">Simulation d'une page client externe</div>
+    </div>
+    <a href="/admin" target="_blank">Dashboard →</a>
+  </div>
+
+  <div class="panel-body">
+
+    <!-- ── Widget Config ── -->
+    <div class="p-section">
+      <div class="p-section-title">⚙️ Configuration widget</div>
+      <div class="cfg-row">
+        <div class="cfg-label">Serveur (data-server)</div>
+        <input class="cfg-input" id="cfg-server" value="" placeholder="http://localhost:5000">
+      </div>
+      <div class="cfg-row-split">
+        <div class="cfg-row">
+          <div class="cfg-label">Couleur (data-color)</div>
+          <input class="cfg-input" id="cfg-color" type="color" value="#00a884" style="height:34px;padding:2px 4px;cursor:pointer">
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-label">Position</div>
+          <select class="cfg-input" id="cfg-position">
+            <option value="bottom-right">Droite</option>
+            <option value="bottom-left">Gauche</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="act-btn blue" style="flex:1" onclick="reloadWidget()">↻ Recharger widget</button>
+      </div>
+    </div>
+
+    <!-- ── Visitor / Session state ── -->
+    <div class="p-section">
+      <div class="p-section-title">👤 État visiteur &amp; session</div>
+      <div class="state-row">
+        <span class="state-key">Visitor ID</span>
+        <span class="state-val blue" id="st-vid">—</span>
+      </div>
+      <div class="state-row">
+        <span class="state-key">Session ID</span>
+        <span class="state-val blue" id="st-sid">—</span>
+      </div>
+      <div class="state-row">
+        <span class="state-key">Téléphone</span>
+        <span class="state-val green" id="st-phone">—</span>
+      </div>
+      <div class="state-row">
+        <span class="state-key">Widget ouvert</span>
+        <span class="state-val" id="st-open">—</span>
+      </div>
+      <div style="margin-top:8px">
+        <button class="act-btn" style="width:100%;margin-bottom:4px" onclick="refreshState()">↻ Actualiser l'état</button>
+      </div>
+    </div>
+
+    <!-- ── Quick actions ── -->
+    <div class="p-section">
+      <div class="p-section-title">⚡ Actions rapides</div>
+      <div class="action-grid">
+        <button class="act-btn blue"   onclick="openChat()">💬 Ouvrir chat</button>
+        <button class="act-btn"        onclick="closeChat()">✕ Fermer chat</button>
+        <button class="act-btn orange" onclick="resetVisitor()">🆕 Nouveau visiteur</button>
+        <button class="act-btn red"    onclick="clearAll()">🗑️ Vider localStorage</button>
+        <button class="act-btn green"  onclick="setPhone()">📞 Simuler client</button>
+        <button class="act-btn"        onclick="refreshState()">🔄 Refresh état</button>
+      </div>
+    </div>
+
+    <!-- ── Scénarios de test ── -->
+    <div class="p-section">
+      <div class="p-section-title">🎭 Scénarios de test</div>
+      <div class="scenario-list">
+        <div class="scenario" onclick="scenario('new_visitor')">
+          <div class="sc-name">🆕 Nouveau visiteur inconnu</div>
+          <div class="sc-desc">Réinitialise tout — simule un 1er passage sur le site</div>
+        </div>
+        <div class="scenario" onclick="scenario('returning_visitor')">
+          <div class="sc-name">🔄 Visiteur de retour (sans compte)</div>
+          <div class="sc-desc">Conserve le visitor_id mais efface la session</div>
+        </div>
+        <div class="scenario" onclick="scenario('identified_customer')">
+          <div class="sc-name">✅ Client identifié</div>
+          <div class="sc-desc">Injecte un numéro de téléphone pour simuler un client connu</div>
+        </div>
+        <div class="scenario" onclick="scenario('ask_telescope')">
+          <div class="sc-name">🔭 Demander un télescope</div>
+          <div class="sc-desc">Ouvre le chat et envoie une demande de télescope</div>
+        </div>
+        <div class="scenario" onclick="scenario('track_order')">
+          <div class="sc-name">📦 Suivi de commande</div>
+          <div class="sc-desc">Ouvre le chat pour demander le statut d'une commande</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── postMessage events log ── -->
+    <div class="p-section">
+      <div class="p-section-title">📡 Événements postMessage</div>
+      <div class="event-log" id="event-log">
+        <div class="ev-line" style="color:#6e7681;font-style:italic">En attente d'événements…</div>
+      </div>
+      <button class="act-btn" style="width:100%;margin-top:6px" onclick="clearLog()">🗑️ Vider le log</button>
+    </div>
+
+    <!-- ── LocalStorage inspector ── -->
+    <div class="p-section">
+      <div class="p-section-title">🗄️ localStorage</div>
+      <div id="ls-dump" style="font-family:monospace;font-size:11px;color:#8b949e;background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:8px;max-height:120px;overflow-y:auto"></div>
+      <button class="act-btn" style="width:100%;margin-top:6px" onclick="dumpLocalStorage()">↻ Actualiser</button>
+    </div>
+
+    <!-- ── Code d'intégration ── -->
+    <div class="p-section">
+      <div class="p-section-title">📋 Code d'intégration</div>
+      <div class="code-box" id="embed-code">
+        <button class="copy-btn" onclick="copyCode()">Copier</button>
+        <span id="embed-code-text"></span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     CHAT WIDGET — intégré exactement comme sur un
+     vrai site client externe
+═══════════════════════════════════════════════ -->
+<script>
+// ── Panel toggle ──────────────────────────────────────────────────────────────
+var panelOpen = false;
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('test-panel').classList.toggle('open', panelOpen);
+  document.getElementById('panel-toggle').classList.toggle('shifted', panelOpen);
+  if (panelOpen) { refreshState(); dumpLocalStorage(); }
+}
+
+// ── Widget loader ─────────────────────────────────────────────────────────────
+var widgetScript = null;
+
+function getServer() {
+  return document.getElementById('cfg-server').value.trim() || window.location.origin;
+}
+
+function loadWidget() {
+  // Remove existing widget elements and script
+  var old = document.getElementById('tuno-btn');
+  var oldPanel = document.getElementById('tuno-panel');
+  var oldStyles = document.querySelectorAll('style[data-tuno]');
+  if (old) old.remove();
+  if (oldPanel) oldPanel.remove();
+  if (widgetScript) widgetScript.remove();
+  oldStyles.forEach(function(s){ s.remove(); });
+  if (window.TuniOptiqueWidget) delete window.TuniOptiqueWidget;
+
+  var color    = document.getElementById('cfg-color').value;
+  var position = document.getElementById('cfg-position').value;
+  var server   = getServer();
+
+  var script = document.createElement('script');
+  script.src = server + '/static/js/widget.js';
+  script.setAttribute('data-server',   server);
+  script.setAttribute('data-color',    color);
+  script.setAttribute('data-position', position);
+  script.onload  = function() { logEvent('storage', 'Widget chargé depuis ' + server); refreshState(); updateEmbedCode(); };
+  script.onerror = function() { logEvent('close', 'Erreur chargement widget.js depuis ' + server); };
+  document.body.appendChild(script);
+  widgetScript = script;
+}
+
+function reloadWidget() {
+  logEvent('storage', 'Rechargement du widget…');
+  loadWidget();
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+function refreshState() {
+  var vid   = localStorage.getItem('tuno_vid')      || '';
+  var sid   = localStorage.getItem('tuno_sid')      || '';
+  var phone = localStorage.getItem('customer_phone')|| '';
+  var open  = localStorage.getItem('tuno_widget_open') === '1';
+
+  set('st-vid',   vid   || '—', vid?'blue':'empty');
+  set('st-sid',   sid   || '—', sid?'blue':'empty');
+  set('st-phone', phone || '—', phone?'green':'empty');
+  set('st-open',  open  ? 'Oui ✓' : 'Non',   open?'green':'red');
+}
+
+function set(id, val, cls) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.className = 'state-val ' + (cls||'');
+}
+
+// ── Quick actions ─────────────────────────────────────────────────────────────
+function openChat() {
+  if (window.TuniOptiqueWidget) { window.TuniOptiqueWidget.open(); logEvent('open', 'Chat ouvert via API'); refreshState(); }
+  else toast('Widget pas encore chargé');
+}
+
+function closeChat() {
+  if (window.TuniOptiqueWidget) { window.TuniOptiqueWidget.close(); logEvent('close', 'Chat fermé via API'); refreshState(); }
+}
+
+function resetVisitor() {
+  localStorage.removeItem('tuno_vid');
+  localStorage.removeItem('tuno_sid');
+  localStorage.removeItem('customer_phone');
+  localStorage.removeItem('tuno_widget_open');
+  logEvent('storage', 'Visitor ID réinitialisé — nouveau visiteur');
+  loadWidget();
+  refreshState();
+  toast('Nouveau visiteur simulé');
+}
+
+function clearAll() {
+  localStorage.clear();
+  logEvent('storage', 'localStorage entièrement vidé');
+  loadWidget();
+  refreshState();
+  dumpLocalStorage();
+  toast('localStorage vidé');
+}
+
+function setPhone() {
+  var phone = prompt('Numéro de téléphone du client à simuler :', '22334455');
+  if (!phone) return;
+  localStorage.setItem('customer_phone', phone);
+  logEvent('identified', 'Téléphone injecté : ' + phone);
+  loadWidget();
+  refreshState();
+  toast('Client simulé : ' + phone);
+}
+
+// ── Scénarios ─────────────────────────────────────────────────────────────────
+function scenario(name) {
+  switch (name) {
+    case 'new_visitor':
+      resetVisitor();
+      break;
+
+    case 'returning_visitor':
+      localStorage.removeItem('tuno_sid');
+      localStorage.removeItem('tuno_widget_open');
+      logEvent('storage', 'Session effacée — visiteur de retour sans session active');
+      loadWidget();
+      refreshState();
+      toast('Visiteur de retour simulé');
+      break;
+
+    case 'identified_customer':
+      var p = prompt('Numéro du client :', '22334455');
+      if (p) {
+        localStorage.setItem('customer_phone', p);
+        logEvent('identified', 'Scénario : client identifié ' + p);
+        loadWidget();
+        refreshState();
+        toast('Client ' + p + ' pré-identifié');
+      }
+      break;
+
+    case 'ask_telescope':
+      openChat();
+      setTimeout(function() {
+        sendToIframe({ type: 'TUNO_INJECT_MSG', text: 'Je cherche un télescope, qu\'est-ce que vous avez en stock ?' });
+      }, 1200);
+      break;
+
+    case 'track_order':
+      openChat();
+      setTimeout(function() {
+        sendToIframe({ type: 'TUNO_INJECT_MSG', text: 'Bonjour, je voudrais suivre ma commande' });
+      }, 1200);
+      break;
+  }
+}
+
+// Send a message to the iframe (only works if chat.js listens to TUNO_INJECT_MSG)
+function sendToIframe(msg) {
+  var iframe = document.querySelector('#tuno-panel iframe');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage(msg, '*');
+    logEvent('msg', 'Message injecté dans l\'iframe : ' + (msg.text||msg.type));
+  }
+}
+
+// Click product card → open chat with pre-filled context
+function askChat(text) {
+  openChat();
+  setTimeout(function() { sendToIframe({ type: 'TUNO_INJECT_MSG', text: text }); }, 1000);
+}
+
+// ── postMessage listener ───────────────────────────────────────────────────────
+window.addEventListener('message', function(event) {
+  var msg = event.data;
+  if (!msg || typeof msg !== 'object') return;
+
+  if (msg.type === 'TUNO_IDENTIFIED') {
+    logEvent('identified', 'Client identifié : ' + msg.phone);
+    refreshState();
+  } else if (msg.type === 'TUNO_CLOSE') {
+    logEvent('close', 'Chat fermé par l\'iframe');
+    refreshState();
+  } else if (msg.type === 'TUNO_UNREAD') {
+    logEvent('msg', 'Message non lu : ' + msg.count);
+  } else {
+    logEvent('msg', msg.type + (msg.text ? ' — ' + msg.text.slice(0,40) : ''));
+  }
+});
+
+// Intercept localStorage changes to reflect in panel
+var _origSetItem = localStorage.setItem.bind(localStorage);
+localStorage.setItem = function(k, v) {
+  _origSetItem(k, v);
+  if (panelOpen && ['tuno_vid','tuno_sid','customer_phone','tuno_widget_open'].includes(k)) {
+    refreshState();
+    dumpLocalStorage();
+  }
+};
+
+// ── Event log ─────────────────────────────────────────────────────────────────
+function logEvent(type, msg) {
+  var log = document.getElementById('event-log');
+  if (!log) return;
+  var time = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  // Clear placeholder
+  var placeholder = log.querySelector('div[style]');
+  if (placeholder) placeholder.remove();
+
+  var line = document.createElement('div');
+  line.className = 'ev-line';
+  line.innerHTML = '<span class="ev-time">[' + time + '] </span>'
+    + '<span class="ev-type ' + type + '">' + type.toUpperCase() + '</span>'
+    + '<span class="ev-body"> — ' + esc(msg) + '</span>';
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('event-log').innerHTML =
+    '<div class="ev-line" style="color:#6e7681;font-style:italic">Log vidé.</div>';
+}
+
+// ── localStorage dump ─────────────────────────────────────────────────────────
+function dumpLocalStorage() {
+  var el = document.getElementById('ls-dump');
+  if (!el) return;
+  var keys = Object.keys(localStorage).sort();
+  if (!keys.length) { el.innerHTML = '<span style="color:#6e7681;font-style:italic">vide</span>'; return; }
+  el.innerHTML = keys.map(function(k) {
+    var v = localStorage.getItem(k);
+    var color = k.startsWith('tuno_') || k === 'customer_phone' ? '#58a6ff' : '#6e7681';
+    return '<div><span style="color:' + color + '">' + esc(k) + '</span>'
+      + ' = <span style="color:#3fb950">' + esc(v.slice(0,80)) + (v.length>80?'…':'') + '</span></div>';
+  }).join('');
+}
+
+// ── Embed code ────────────────────────────────────────────────────────────────
+function updateEmbedCode() {
+  var server = getServer();
+  var color  = document.getElementById('cfg-color').value;
+  var pos    = document.getElementById('cfg-position').value;
+  var code = '<script\n'
+    + '  src="' + server + '/static/js/widget.js"\n'
+    + '  data-server="' + server + '"\n'
+    + '  data-color="' + color + '"\n'
+    + '  data-position="' + pos + '"\n'
+    + '><\/script>';
+  document.getElementById('embed-code-text').textContent = code;
+}
+
+function copyCode() {
+  var code = document.getElementById('embed-code-text').textContent;
+  navigator.clipboard.writeText(code).then(function() {
+    toast('Code copié !');
+    var btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copié';
+    setTimeout(function(){ btn.textContent = 'Copier'; }, 2000);
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 2500);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('cfg-server').value = window.location.origin;
+updateEmbedCode();
+
+// Update embed code when config changes
+document.getElementById('cfg-color').addEventListener('input', updateEmbedCode);
+document.getElementById('cfg-position').addEventListener('change', updateEmbedCode);
+document.getElementById('cfg-server').addEventListener('input', updateEmbedCode);
+
+// Auto-refresh state every 3s when panel is open
+setInterval(function() { if (panelOpen) { refreshState(); dumpLocalStorage(); } }, 3000);
+
+// Load the widget on page load (same way a real client site would)
+window.addEventListener('DOMContentLoaded', function() {
+  loadWidget();
+  refreshState();
+  logEvent('storage', 'Page chargée — widget initialisé');
+});
+</script>
+
+</body>
+</html>
