@@ -111,6 +111,33 @@ svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-even
 /* labels */
 #labels .lbl{position:absolute;transform:translate(-50%,-50%);background:rgba(7,11,24,.88);border:2px solid var(--cy);border-radius:12px;padding:5px 16px;font-size:27px;font-weight:700;white-space:nowrap;opacity:0;visibility:hidden}
 #fade{position:absolute;inset:0;background:#05080f;opacity:1;pointer-events:none}
+
+/* ===== light theme ===== */
+:root{--bg:#eaf1fb;--ink:#10203f;--mut:#4d5f86;--panel:rgba(255,255,255,.93);--bd:rgba(40,70,130,.22)}
+html,body{background:#eaf1fb}
+#vig{background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,0) 60%,rgba(120,150,205,.28) 100%)}
+.panel{box-shadow:0 12px 34px rgba(40,70,130,.22)}
+#title h1{color:#10203f;text-shadow:none}
+#title .en{color:#4d5f86}#title.big .en{color:#2b5fd4}
+#title .pill{color:#fff;background:#2563eb}
+#caption{background:rgba(255,255,255,.94);color:#10203f;border:2px solid rgba(40,70,130,.25);box-shadow:0 10px 30px rgba(40,70,130,.25);font-size:60px}
+#card .num{background:#2563eb;color:#fff}
+#card .cnt{color:#92400e;background:rgba(251,191,36,.28);border-color:rgba(180,120,10,.5)}
+#card p{color:#33456d}#card .en{color:#4d5f86}
+#stepper h3{color:#4d5f86}
+.step{color:#6b7ba2}.step.done{color:#15803d}.step.done i{color:#fff}.step.now{color:#0b1b3a}
+.step i{border-color:#9db0d6}.step.now i{background:#2563eb;border-color:#2563eb;color:#fff;box-shadow:0 0 16px rgba(37,99,235,.5)}
+#formula .hd{color:#1d4ed8}#formula .row{color:#33456d}#formula .ok{color:#15803d}#formula .bad{color:#b91c1c}
+#labels .lbl{background:rgba(255,255,255,.96);color:#10203f;box-shadow:0 6px 16px rgba(40,70,130,.25)}
+.chip{background:rgba(255,255,255,.94)}
+.chip .dot{background:#c5d0e6}.chip .st{color:#4d5f86}
+.kcode{background:#0f1b38;color:#9fe8b4}
+.ktitle{color:#10203f}
+.house .wall{border:3px solid #10203f}
+#tl .meta{color:#33456d}
+#outro{background:radial-gradient(ellipse at 50% 50%,rgba(234,241,251,.55),rgba(234,241,251,.9))}
+#outro h1{text-shadow:none;color:#10203f}#outro p{color:#3d5280}
+#fade{background:#f4f8fd}
 </style></head>
 <body><div id="stage">
 <canvas id="gl" width="1920" height="1080"></canvas>

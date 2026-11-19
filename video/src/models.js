@@ -20,7 +20,7 @@ const cyl = (r, h, mat, x, y, z, seg = 24, r2 = r) => mesh(new THREE.CylinderGeo
 function rbox(w, h, d, r, mat, x, y, z) { return mesh(new RoundedBoxGeometry(w, h, d, 3, r), mat, x, y, z); }
 
 export const MAT = {
-  pcb: new THREE.MeshPhysicalMaterial({ color: 0x00727c, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }),
+  pcb: new THREE.MeshPhysicalMaterial({ color: 0x00838c, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }),
   black: new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.5, metalness: 0.1 }),
   darkgrey: new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.55, metalness: 0.2 }),
   silver: new THREE.MeshStandardMaterial({ color: 0xd2d6db, roughness: 0.28, metalness: 1 }),
@@ -42,7 +42,7 @@ export function glowTexture() {
 let _glow; const glowTex = () => (_glow ||= glowTexture());
 export function makeGlow(color, size) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: glowTex(), color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0,
+    map: glowTex(), color, blending: THREE.NormalBlending, transparent: true, depthWrite: false, opacity: 0,
   }));
   s.scale.set(size, size, 1); s.renderOrder = 10; return s;
 }
@@ -187,9 +187,12 @@ export function makeArduino() {
   const onMat = new THREE.MeshStandardMaterial({ color: 0x143a22, emissive: 0x2dff6b, emissiveIntensity: 0, roughness: 0.3 });
   const onLed = box(2.2, 0.8, 1.3, onMat, milX(1260), 0.5, milZ(1620)); g.add(onLed);
   const onGlow = makeGlow(0x4dff8a, 5); onGlow.position.set(milX(1260), 2, milZ(1620)); g.add(onGlow);
-  // cartoon eyes for the little "brain"
-  const eyeW = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 }), eyeB = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
-  for (const x of [6, 19.5]) { g.add(mesh(new THREE.SphereGeometry(4.4, 24, 16), eyeW, x, 4.4, -12.5)); g.add(mesh(new THREE.SphereGeometry(2.1, 16, 12), eyeB, x + 0.5, 5.3, -8.7)); }
+  // extra real-board details: polyfuse, 2nd ICSP (16U2), SMD status LEDs (TX/RX/L), tactile-switch legs, gold pin contacts
+  g.add(box(4.2, 1.6, 2.6, new THREE.MeshStandardMaterial({ color: 0xe6c64a, roughness: 0.5 }), milX(520), 0.8, milZ(1200)));
+  g.add(box(7.7, 2.5, 5.1, MAT.darkgrey, milX(650), 1.25, milZ(1520)));
+  for (let i = 0; i < 6; i++) g.add(box(0.7, 3.2, 0.7, MAT.gold, milX(650) + (i % 2 ? 1.27 : -1.27), 2.6, milZ(1520) + (Math.floor(i / 2) - 1) * PITCH));
+  for (const [x, y, c] of [[880, 1830, 0xffb000], [880, 1930, 0xffb000], [1260, 1450, 0xffb000]]) g.add(box(1.8, 0.7, 1.0, new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }), milX(x), 0.45, milZ(y)));
+  for (const n of Object.keys(UNO_PINS)) { const [x, y] = UNO_PINS[n]; g.add(box(0.5, 0.2, 0.5, MAT.gold, milX(x), HDR_H + 0.03, milZ(y))); }
   g.userData.setPower = a => { onMat.emissiveIntensity = 3 * a; onGlow.material.opacity = 0.5 * a; };
   g.userData.usbOpening = new THREE.Vector3(milX(0) - 6 + 8.2 - 8.2, 5.45, usbZ);
   g.traverse(o => { if (o.isMesh && o.material !== MAT.hole) { o.castShadow = true; o.receiveShadow = true; } });
@@ -343,7 +346,7 @@ export function makeWire(colorHex, A, B, { lift = 0, housing = 0x1b1d20 } = {}) 
 // ======================================================================
 export function makeUSBPlugB() { // inserts along +x -> -x : tip at origin, boot extends to +x
   const g = new THREE.Group();
-  g.add(box(16, 10.4, 11.4, MAT.silver, -8, 0, 0)); // metal shell, tip at x=-16
+  g.add(rbox(16, 10.4, 11.4, 1.2, MAT.silver, -8, 0, 0)); // metal shell, tip at x=-16
   g.add(box(0.3, 7.4, 8.4, MAT.hole, -16.02, 0, 0));
   g.add(box(10, 2.4, 6, new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.5 }), -11.2, 0, 0));
   g.add(box(18, 13, 14, MAT.black, 9, 0, 0));

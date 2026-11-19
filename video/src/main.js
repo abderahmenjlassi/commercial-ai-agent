@@ -19,22 +19,22 @@ const QP = new URLSearchParams(location.search);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: QP.get('aa') !== '0', preserveDrawingBuffer: true });
 renderer.setPixelRatio(1); renderer.setSize(W * +(QP.get('rs') || 1), H * +(QP.get('rs') || 1), false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.toneMapping = THREE.NoToneMapping;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-const BG = 0x16265c;
+const BG = 0xeaf1fb;
 scene.background = new THREE.Color(BG);
-scene.fog = new THREE.Fog(BG, 520, 1700);
+scene.fog = new THREE.Fog(BG, 560, 1800);
 const pm = new THREE.PMREMGenerator(renderer);
 const envTex = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const camera = new THREE.PerspectiveCamera(38, W / H, 1, 6000);
-scene.add(new THREE.HemisphereLight(0xb7ccff, 0x27304d, 1.15));
-const key = new THREE.DirectionalLight(0xffffff, 2.5);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9fb0d0, 1.0));
+const key = new THREE.DirectionalLight(0xfff6e8, 1.9);
 key.position.set(140, 260, 200); key.castShadow = true; key.shadow.mapSize.set(+(QP.get('sm') || 2048), +(QP.get('sm') || 2048));
-key.shadow.bias = -0.0004; key.shadow.normalBias = 0.25; scene.add(key, key.target);
-const rim = new THREE.DirectionalLight(0x6aa8ff, 1.1); rim.position.set(-220, 140, -220); scene.add(rim);
+key.shadow.bias = -0.0012; key.shadow.normalBias = 0.7; key.shadow.radius = 3; scene.add(key, key.target);
+const rim = new THREE.DirectionalLight(0xcfe0ff, 0.7); rim.position.set(-220, 140, -220); scene.add(rim);
 function setShadow(cx, cz, ext, h = 300) {
   key.position.set(cx + 0.5 * ext, h, cz + 0.8 * ext); key.target.position.set(cx, 0, cz); key.target.updateMatrixWorld();
   const c = key.shadow.camera; c.left = -ext; c.right = ext; c.top = ext; c.bottom = -ext; c.near = 10; c.far = 1200; c.updateProjectionMatrix();
@@ -42,14 +42,16 @@ function setShadow(cx, cz, ext, h = 300) {
 
 // floor
 const floorTex = M.canvasTex(512, 512, (g, w, h) => {
-  g.fillStyle = '#1b3070'; g.fillRect(0, 0, w, h);
-  g.strokeStyle = 'rgba(120,160,230,0.13)'; g.lineWidth = 2;
+  g.fillStyle = '#e4edf9'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(70,110,180,0.20)'; g.lineWidth = 2;
   for (let i = 0; i <= 5; i++) { const p = (i * w) / 5; g.beginPath(); g.moveTo(p, 0); g.lineTo(p, h); g.stroke(); g.beginPath(); g.moveTo(0, p); g.lineTo(w, p); g.stroke(); }
-  g.strokeStyle = 'rgba(120,170,255,0.30)'; g.lineWidth = 4; g.strokeRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(70,110,180,0.42)'; g.lineWidth = 4; g.strokeRect(0, 0, w, h);
 }, 16);
 floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(60, 60);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshLambertMaterial({ map: floorTex }));
-floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshBasicMaterial({ map: floorTex }));
+floor.rotation.x = -Math.PI / 2; scene.add(floor);
+const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.32 }));
+shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = 0.05; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
 
 // ------------------------------------------------------------------ groups
 const gIntro = new THREE.Group(), gParts = new THREE.Group(), gTheory = new THREE.Group(), gBuild = new THREE.Group(), gUsb = new THREE.Group();
@@ -87,7 +89,7 @@ const gndK = 5;
 const gndWire = M.makeWire(0x202226, pinW('GND_TOP'), railW('nearMinus', gndK)); gBuild.add(gndWire);
 
 // column / rail highlights
-const hiMat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+const hiMat = c => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, blending: THREE.NormalBlending, depthWrite: false });
 const hiCol = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 11.6), hiMat(0x38bdf8)); hiCol.rotation.x = -Math.PI / 2; hiCol.position.set(M.bbColX(10), BBY + 0.12, 8.9); gBuild.add(hiCol);
 const hiRail = new THREE.Mesh(new THREE.PlaneGeometry(71, 2.0), hiMat(0x3b82f6)); hiRail.rotation.x = -Math.PI / 2; hiRail.position.set(0, BBY + 0.12, M.BB.RAIL_Z.nearMinus); gBuild.add(hiRail);
 
@@ -114,9 +116,9 @@ function updateCable(xb) {
 const partsStages = [];
 const ledColors = ['red', 'yellow', 'green'];
 function stage(i) { const s = new THREE.Group(); s.position.x = (i - 2.5) * 190; const f = new THREE.Group(); s.add(f);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(46, 51, 72), new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(46, 51, 72), new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.35, blending: THREE.NormalBlending, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = 0.4; s.add(ring);
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(46, 64), new THREE.MeshBasicMaterial({ color: 0x1d4ed8, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(46, 64), new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.12, blending: THREE.NormalBlending, depthWrite: false }));
   disc.rotation.x = -Math.PI / 2; disc.position.y = 0.35; s.add(disc);
   gParts.add(s); const o = { s, f, ring, disc }; partsStages.push(o); return o; }
 {
@@ -137,7 +139,7 @@ const ledBig = M.makeLED('red', { glowSize: 26 }); ledBig.scale.setScalar(4); le
 const resBig = M.makeResistor({ straight: true, lead: 14 }); resBig.scale.setScalar(8); resBig.position.set(135, 62, 0); gTheory.add(resBig);
 
 // reflections only where they matter (metal / glass / glossy coat): keeps the software renderer fast
-scene.traverse(o => { const m = o.material; if (m && (m.metalness > 0.5 || m.isMeshPhysicalMaterial)) { m.envMap = envTex; m.envMapIntensity = 0.55; m.needsUpdate = true; } });
+scene.traverse(o => { const m = o.material; if (m && (m.metalness > 0.5 || m.isMeshPhysicalMaterial)) { m.envMap = envTex; m.envMapIntensity = 0.45; m.needsUpdate = true; } });
 
 // ------------------------------------------------------------------ labels
 const svg = $('lines'), labelLayer = $('labels'); const SVGNS = 'http://www.w3.org/2000/svg';
@@ -265,12 +267,17 @@ function kidHTML(id, t) {
   if (id === 'e1') return `<div class="ktitle">لكل مصباح بيت برقم 🏠</div><div class="kbody">${houses()}</div>${code('RED_PIN    = 10;\nYELLOW_PIN = 9;\nGREEN_PIN  = 8;')}`;
   if (id === 'e2') return `<div class="ktitle">أوامر الدماغ</div><div class="kbody"><div class="col2"><div class="sw on"><i></i></div>💡 أضئ</div><div class="col2"><div class="sw"><i></i></div>🌑 أطفئ</div></div>${code('HIGH  = on      LOW = off')}`;
   if (id === 'e3') { const arrows = '➜➜➜'; return `<div class="ktitle">الدماغ يرسل الكهرباء للبيوت</div><div class="kbody"><div style="font-size:150px">🧠</div><div style="font-size:90px;color:#fde047;opacity:${0.55 + 0.45 * Math.sin(t * 6)}">${arrows}</div><div style="transform:scale(.8);display:flex;gap:14px">${houses(0.75)}</div></div>${code('pinMode(pin, OUTPUT);')}`; }
-  const cfg = { e4: ['red', 5, '#ef4444', 'setLights(HIGH, LOW, LOW);\ndelay(5000);   // 5 seconds', 'قف! 🛑'], e5: ['green', 5, '#22c55e', 'setLights(LOW, LOW, HIGH);\ndelay(5000);   // 5 seconds', 'امشِ! 🚶'], e6: ['yellow', 2, '#fbbf24', 'setLights(LOW, HIGH, LOW);\ndelay(2000);   // 2 seconds', 'استعد! ⚠️'] }[id];
+  const cfg = { e4: [0, 5, '#ef4444', 'setLights(HIGH, LOW, LOW);\ndelay(5000);   // 5 s', 'قف! 🛑', '🔴'], e5: [5, 5, '#22c55e', 'setLights(LOW, LOW, HIGH);\ndelay(5000);   // 5 s', 'امشِ! 🚶', '🟢'], e6: [10, 2, '#f59e0b', 'setLights(LOW, HIGH, LOW);\ndelay(2000);   // 2 s', 'استعد! ⚠️', '🟡'] }[id];
   if (!cfg) return undefined;
-  const [, N, col, c, word] = cfg; const n = Math.max(1, N - Math.floor(frac * N * 0.98));
-  const ring = `<svg width="270" height="270" viewBox="0 0 270 270"><circle cx="135" cy="135" r="112" fill="${col}" opacity=".22"/><circle cx="135" cy="135" r="112" fill="none" stroke="#fff" stroke-width="16" opacity=".22"/><circle cx="135" cy="135" r="112" fill="none" stroke="${col}" stroke-width="18" stroke-linecap="round" stroke-dasharray="704" stroke-dashoffset="${(704 * frac).toFixed(1)}" transform="rotate(-90 135 135)"/><text x="135" y="178" text-anchor="middle" font-size="120" font-weight="700" fill="#fff" font-family="DejaVu Sans">${n}</text></svg>`;
-  const loop = id === 'e6' ? `<div style="font-size:84px;transform:rotate(${(t * 140) % 360}deg);display:inline-block">🔁</div>` : `<div style="font-size:110px">⏳</div>`;
-  return `<div class="ktitle">${word}</div><div class="kbody">${ring}${loop}</div>${code(c)}`;
+  const [st, N, col, c, word, emo] = cfg; const n = Math.max(1, N - Math.floor(frac * N * 0.98));
+  // "simulation wheel": the whole loop (5 + 5 + 2 s) with a hand that runs around while the code executes
+  const C = 2 * Math.PI * 110, seg = [['#ef4444', 0, 5], ['#22c55e', 5, 5], ['#f59e0b', 10, 2]];
+  const arcs = seg.map(([cc, s0, len]) => { const L = (len / 12) * C - 6; const act = s0 === st; return `<circle cx="150" cy="150" r="110" fill="none" stroke="${cc}" stroke-width="${act ? 44 : 34}" opacity="${act ? 1 : 0.28}" stroke-dasharray="${L.toFixed(1)} ${(C - L).toFixed(1)}" stroke-dashoffset="${(-(s0 / 12) * C - 3).toFixed(1)}" transform="rotate(-90 150 150)"/>`; }).join('');
+  const ang = ((st + frac * N) / 12) * 2 * Math.PI - Math.PI / 2;
+  const hand = `<circle cx="${(150 + 110 * Math.cos(ang)).toFixed(1)}" cy="${(150 + 110 * Math.sin(ang)).toFixed(1)}" r="19" fill="#fff" stroke="#10203f" stroke-width="6"/>`;
+  const wheel = `<svg width="300" height="300" viewBox="0 0 300 300">${arcs}${hand}<text x="150" y="146" text-anchor="middle" font-size="76">${emo}</text><text x="150" y="212" text-anchor="middle" font-size="68" font-weight="700" fill="#10203f" font-family="DejaVu Sans">${n}</text></svg>`;
+  const side = `<div style="text-align:center"><div style="font-size:86px;display:inline-block;transform:rotate(${(t * 160) % 360}deg)">🔁</div><div style="font-size:40px;font-weight:700;margin-top:6px">تتكرر للأبد</div></div>`;
+  return `<div class="ktitle">${word}</div><div class="kbody">${wheel}${side}</div>${code(c)}`;
 }
 
 // ------------------------------------------------------------------ main update
@@ -315,7 +322,7 @@ function update(t) {
       s.f.position.y = s.base + 2.5 * Math.sin(t * 1.6 + i * 1.3) * 1.0;
       s.item.rotation.y = (i === 5 ? 0.6 : 0) + 0.45 * Math.sin(t * 0.55 + i);
       s.item.rotation.x = s.tilt ? s.tilt : 0;
-      const hl = act === i ? 1 : 0.0; s.ring.material.opacity = 0.18 + 0.5 * hl * (0.75 + 0.25 * Math.sin(t * 4)); s.disc.material.opacity = 0.08 + 0.2 * hl;
+      const hl = act === i ? 1 : 0.0; s.ring.material.opacity = 0.3 + 0.5 * hl * (0.75 + 0.25 * Math.sin(t * 4)); s.disc.material.opacity = 0.08 + 0.16 * hl;
     });
     const wide = { t: B.b0.t0, p: [0, 240, 1040], l: [0, 25, 0], f: 36 };
     const keys = [wide, { ...wide, t: B.b0.t1 - 0.3 }];
@@ -377,8 +384,8 @@ function update(t) {
     buildState(t); setLeds(null); scene.updateMatrixWorld(true);
     hiCol.material.opacity = 0.0; hiRail.material.opacity = 0.0;
     if (id === 'd1') {
-      hiCol.material.opacity = 0.65 * inWin(t, K.hiCol[0], K.hiCol[1] + 0.2, 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
-      hiRail.material.opacity = 0.65 * inWin(t, K.hiRail[0], K.hiRail[1], 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
+      hiCol.material.opacity = 0.7 * inWin(t, K.hiCol[0], K.hiCol[1] + 0.2, 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
+      hiRail.material.opacity = 0.7 * inWin(t, K.hiRail[0], K.hiRail[1], 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
       const a1 = inWin(t, K.hiCol[0], K.hiCol[1] + 0.2, 0.35), a2 = inWin(t, K.hiRail[0], K.hiRail[1], 0.35);
       labels.push({ id: 'col', a: a1, text: 'خمس فتحات أصدقاء متصلون 🤝', anchor: holeW(10, 'c'), dx: -250, dy: -140, color: '#38bdf8' });
       labels.push({ id: 'rail', a: a2, text: 'الطريق الأزرق: كل فتحاته متصلة', anchor: railW('nearMinus', 20), dx: 190, dy: 130, color: '#60a5fa' });
@@ -454,19 +461,19 @@ function update(t) {
       hud.pins = ramp(t, B.g1.t0 + 0.8, 0.5); hud.tl = hud.pins;
       const lc = (t < K.cycle0 ? 0 : t - K.cycle0); const loc = lc % 12;
       const kc = { R: ['🔴 قف', '#ef4444', 5], Y: ['🟡 استعد', '#fbbf24', 2], G: ['🟢 امشِ', '#22c55e', 5] };
-      pinsHTML = ['R', 'Y', 'G'].map(k => `<div class="chip ${state === k ? 'on' : ''}" style="color:${kc[k][1]}"><span class="dot"></span><span style="color:#fff">${kc[k][0]} · ${kc[k][2]}</span></div>`).join('');
+      pinsHTML = ['R', 'Y', 'G'].map(k => `<div class="chip ${state === k ? 'on' : ''}" style="color:${kc[k][1]}"><span class="dot"></span><span style="color:#10203f">${kc[k][0]} · ${kc[k][2]}</span></div>`).join('');
       hud.tl = 0; hud.road = hud.pins;
       const ease = u => 1 - (1 - u) * (1 - u);
       const carX = loc < 5 ? 40 : loc < 10 ? 40 + ((loc - 5) / 5) * 75 : -35 + 75 * ease((loc - 10) / 2);
       const walking = loc < 5 && t >= K.cycle0;
-      roadHTML = `<div class="dash"></div><div class="zebra"></div><span style="left:${carX}%;transform:scaleX(-1)">🚗</span><span style="left:69.5%;top:${walking ? 8 + 6 * Math.sin(t * 9) : 12}px">${walking ? '🚶' : '🧍'}</span><span style="left:90%;font-size:58px;top:18px">${state === 'R' ? '🔴' : state === 'G' ? '🟢' : '🟡'}</span>`;
+      roadHTML = `<div class="dash"></div><div class="zebra"></div><span style="left:${carX}%;top:26px;font-size:62px;transform:scaleX(-1)">🚗</span><span style="left:69.5%;top:${walking ? 22 + 5 * Math.sin(t * 9) : 2}px;font-size:56px">${walking ? '🚶' : '🧍'}</span><span style="left:90%;font-size:58px;top:18px">${state === 'R' ? '🔴' : state === 'G' ? '🟢' : '🟡'}</span>`;
     }
     if (sc.id === 'H') {
-      hud.tips = 1; const tips = ['h1', 'h2', 'h3'];
+      hud.tips = 0; const tips = ['h1', 'h2', 'h3'];
       tipsHTML = tips.map((k, i) => { const a = ramp(t, B[k].t0 + 0.2, 0.5);
         const txt = ['🔄 إذا لم يضئ المصباح: اقلبه!', '👨‍👩‍👧 اطلب مساعدة شخص كبير', '🎈 غيّر الأرقام وانظر ماذا يحدث!'][i];
         return `<div class="tip panel" style="opacity:${a};transform:translateY(${(1 - a) * 18}px)"><i>${i + 1}</i><span>${txt}</span></div>`; }).join('');
-      hud.outro = ramp(t, B.h4.t0 + 0.2, 0.9); if (hud.outro > 0) { hud.tips = 1 - hud.outro; hud.title = Math.min(hud.title, 1 - hud.outro); }
+      hud.outro = ramp(t, B.h4.t0 + 0.2, 0.9); if (hud.outro > 0) { hud.title = Math.min(hud.title, 1 - hud.outro); }
     }
   }
 
@@ -484,7 +491,7 @@ function update(t) {
   setHUD($('tips'), hud.tips, tipsHTML); setHUD($('outro'), hud.outro);
   // caption
   let ca = 0, ctext;
-  if (beat) { ca = ramp(t, beat.t0 - 0.05, 0.35) * (1 - ramp(t, beat.t1 - 0.25, 0.25)); ctext = beat.text.replace(/±5%|\(5 − 2\) ÷ 220 ≈ 13\.6|I = \(Vs − Vf\) ÷ R|22 × 10 = 220/g, m => `<bdi dir="ltr">${m}</bdi>`); }
+  if (beat && beat.text) { ca = ramp(t, beat.t0 - 0.05, 0.35) * (1 - ramp(t, beat.t1 - 0.25, 0.25)); ctext = beat.text.replace(/±5%|\(5 − 2\) ÷ 220 ≈ 13\.6|I = \(Vs − Vf\) ÷ R|22 × 10 = 220/g, m => `<bdi dir="ltr">${m}</bdi>`); }
   if (!(sc.id === 'H' && id === 'h4')) setHUD($('caption'), ca, ctext); else setHUD($('caption'), 0, ctext);
   // scene fade (black)
   const f = Math.max(1 - ramp(t, sc.t0, 0.7), ramp(t, sc.t1 - 0.7, 0.7));

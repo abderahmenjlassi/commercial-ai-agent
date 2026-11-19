@@ -49,7 +49,7 @@ def bass(f, d):
     return (np.sin(2 * np.pi * f * t) + 0.25 * np.sin(2 * np.pi * 2 * f * t)) * env * 0.5
 
 # ------------------------------------------------------------ music
-BPM = 104
+BPM = 124
 beat = 60 / BPM
 bar = 4 * beat
 # Am - F - C - G, two bars each
