@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Cairo;font-weight:400;src:url(fonts/cairo-arabic-400-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:Cairo;font-weight:700;src:url(fonts/cairo-arabic-700-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:Cairo;font-weight:400;src:url(fonts/cairo-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Cairo;font-weight:700;src:url(fonts/cairo-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--bg:#0a1226;--ink:#e8eefc;--mut:#94a3c4;--cy:#38bdf8;--am:#fbbf24;--rd:#ef4444;--gr:#22c55e;--panel:rgba(11,17,36,.80);--bd:rgba(148,170,220,.22)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Cairo,'DejaVu Sans',sans-serif;color:var(--ink)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden}
+canvas#gl{position:absolute;left:0;top:0;width:1920px;height:1080px}
+svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 55%,rgba(2,5,14,.62) 100%);pointer-events:none}
+.hud{position:absolute;opacity:0;visibility:hidden}
+.panel{background:var(--panel);border:1.5px solid var(--bd);border-radius:22px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+/* title */
+#title{right:64px;top:44px;text-align:right}
+#title .pill{display:inline-block;font-size:22px;font-weight:700;color:#06121f;background:var(--cy);padding:2px 18px;border-radius:99px}
+#title h1{font-size:50px;font-weight:700;line-height:1.25;margin-top:8px;text-shadow:0 3px 18px rgba(0,0,0,.6)}
+#title .en{font-size:24px;color:var(--mut);direction:ltr;text-align:right;letter-spacing:.5px}
+#title.big{top:250px;right:90px}
+#title.big h1{font-size:96px;line-height:1.15}
+#title.big .en{font-size:36px;color:#9fc2ff}
+#title.big .pill{font-size:28px}
+/* caption */
+#caption{left:50%;bottom:46px;transform:translateX(-50%);width:1560px;text-align:center;padding:16px 36px 18px;font-size:40px;font-weight:700;line-height:1.5;background:rgba(6,10,24,.78);border:1.5px solid var(--bd);border-radius:22px}
+/* card */
+#card{right:64px;top:210px;width:560px;padding:26px 30px}
+#card .num{display:inline-flex;width:58px;height:58px;border-radius:50%;background:var(--cy);color:#06121f;font-size:34px;font-weight:700;align-items:center;justify-content:center;vertical-align:middle}
+#card h2{display:inline;font-size:36px;font-weight:700;margin-right:14px;vertical-align:middle;line-height:1.4}
+#card .en{font-size:22px;color:var(--mut);direction:ltr;text-align:right;margin:6px 0 4px}
+#card .cnt{display:inline-block;margin:8px 0;font-size:26px;font-weight:700;color:var(--am);background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.45);border-radius:12px;padding:0 16px}
+#card p{font-size:28px;line-height:1.55;color:#cfdcf7}
+/* stepper */
+#stepper{right:64px;top:210px;width:470px;padding:18px 22px}
+#stepper h3{font-size:28px;color:var(--mut);margin-bottom:6px;font-weight:700}
+.step{display:flex;align-items:center;gap:14px;font-size:29px;padding:7px 0;color:#7d8bad;font-weight:400}
+.step i{font-style:normal;display:inline-flex;flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #4a5a82;align-items:center;justify-content:center;font-size:24px;font-weight:700}
+.step.done{color:#a7f3c4}.step.done i{background:var(--gr);border-color:var(--gr);color:#04210f}
+.step.now{color:#fff;font-weight:700}.step.now i{background:var(--cy);border-color:var(--cy);color:#06121f;box-shadow:0 0 18px rgba(56,189,248,.8)}
+/* formula */
+#formula{right:64px;top:200px;width:700px;padding:22px 30px}
+#formula .hd{font-size:30px;color:var(--cy);font-weight:700;margin-bottom:6px}
+#formula .eq{direction:ltr;text-align:center;font-size:52px;font-weight:700;margin:12px 0;font-family:'DejaVu Sans',Cairo,sans-serif}
+#formula .eq small{font-size:30px;color:var(--mut);font-weight:400}
+#formula .row{font-size:28px;line-height:1.7;color:#cfdcf7}
+#formula .ok{color:#86efac;font-weight:700}
+#formula .bad{color:#fca5a5;font-weight:700}
+#formula svg{width:100%;height:auto;direction:ltr;display:block}
+/* code */
+#code{left:56px;top:64px;width:1010px;padding:14px 8px 14px 8px;direction:ltr;font-family:'DejaVu Sans Mono',monospace;font-size:24px}
+#code .bar{font-size:20px;color:var(--mut);padding:0 18px 10px;border-bottom:1px solid var(--bd);margin-bottom:8px;font-family:Cairo,sans-serif}
+.ln{display:flex;height:31px;line-height:31px;border-radius:6px;padding-right:12px;color:#cbd5ee;white-space:pre}
+.ln .src{white-space:pre;flex:1}
+.ln b{flex:none;width:56px;text-align:right;padding-right:18px;color:#53628a;font-weight:400}
+.ln.hl{background:rgba(56,189,248,.20);box-shadow:inset 4px 0 0 var(--cy)}
+.ln.dim{opacity:.38}
+.k{color:#c792ea}.t{color:#4fc3f7}.n{color:#fbbf24}.c{color:#5f7298}.f{color:#7ee787}.d{color:#ff8fb1}
+/* ide */
+#ide{right:60px;top:116px;width:800px;direction:ltr;overflow:hidden}
+#ide .tb{background:#1a2342;padding:10px 16px;font-size:20px;color:#b8c6ea;display:flex;gap:10px;align-items:center}
+#ide .tb .dot{width:14px;height:14px;border-radius:50%}
+#ide .tool{background:#121a35;padding:12px 16px;display:flex;gap:14px;align-items:center}
+#ide .btn{width:54px;height:54px;border-radius:50%;background:#0f8a96;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;font-weight:700;position:relative}
+#ide .board{margin-left:12px;background:#0c1330;border:1.5px solid #34406a;border-radius:8px;padding:10px 16px;font-size:22px;color:#d6e0fa;position:relative}
+#ide .menu{position:absolute;left:0;top:70px;background:#0d1530;border:1.5px solid #3c4a7a;border-radius:10px;padding:8px 0;font-size:21px;z-index:3;width:470px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#ide .menu div{padding:7px 20px;color:#c3d0f0}
+#ide .menu div.sel{background:rgba(56,189,248,.25);color:#fff}
+#ide .code{background:#0b1128;font-family:'DejaVu Sans Mono',monospace;font-size:20px;line-height:27px;padding:12px 16px;height:360px;color:#cbd5ee;white-space:pre;overflow:hidden;position:relative}
+#ide .con{background:#05080f;font-family:'DejaVu Sans Mono',monospace;font-size:20px;padding:10px 16px;height:106px;color:#9fb0d8;white-space:pre;overflow:hidden}
+.ring{position:absolute;border:4px solid var(--am);border-radius:14px;box-shadow:0 0 22px rgba(251,191,36,.8);pointer-events:none;opacity:0}
+/* demo */
+#pins{left:50%;transform:translateX(-50%);top:150px;display:flex;gap:18px}
+.chip{display:flex;align-items:center;gap:12px;padding:8px 22px;font-size:28px;font-weight:700;border-radius:16px;background:var(--panel);border:1.5px solid var(--bd);direction:ltr}
+.chip .dot{width:26px;height:26px;border-radius:50%;background:#2a3350}
+.chip.on .dot{box-shadow:0 0 20px currentColor;background:currentColor}
+.chip .st{min-width:70px;color:#8795bb}.chip.on .st{color:#fff}
+#tl{left:50%;transform:translateX(-50%);top:30px;width:1000px;padding:12px 22px 14px;direction:ltr}
+#tl .bar{position:relative;height:30px;border-radius:15px;overflow:hidden;display:flex;background:#1a2342}
+#tl .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:#0a1020}
+#tl .head{position:absolute;top:-6px;width:4px;height:42px;background:#fff;box-shadow:0 0 12px #fff}
+#tl .meta{display:flex;justify-content:space-between;font-size:22px;color:#b8c6ea;margin-bottom:8px;font-family:Cairo}
+/* tips / outro */
+#tips{right:64px;top:200px;width:700px;display:flex;flex-direction:column;gap:18px}
+.tip{padding:18px 26px;font-size:32px;line-height:1.5;display:flex;gap:18px;align-items:center;opacity:0}
+.tip i{font-style:normal;flex:none;width:54px;height:54px;border-radius:50%;background:var(--am);color:#1b1300;font-weight:700;font-size:30px;display:flex;align-items:center;justify-content:center}
+#outro{left:0;top:0;width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,rgba(10,18,38,.35),rgba(6,10,22,.82))}
+#outro h1{font-size:120px;font-weight:700;text-shadow:0 4px 30px rgba(0,0,0,.7)}
+#outro p{font-size:44px;color:#b9cdf6;margin-top:10px}
+/* labels */
+#labels .lbl{position:absolute;transform:translate(-50%,-50%);background:rgba(7,11,24,.88);border:2px solid var(--cy);border-radius:12px;padding:5px 16px;font-size:27px;font-weight:700;white-space:nowrap;opacity:0;visibility:hidden}
+#fade{position:absolute;inset:0;background:#05080f;opacity:1;pointer-events:none}
+</style></head>
+<body><div id="stage">
+<canvas id="gl" width="1920" height="1080"></canvas>
+<div id="vig"></div>
+<svg id="lines" viewBox="0 0 1920 1080"></svg>
+<div id="labels"></div>
+<div id="title" class="hud"><span class="pill"></span><h1></h1><div class="en"></div></div>
+<div id="card" class="hud panel"></div>
+<div id="stepper" class="hud panel"></div>
+<div id="formula" class="hud panel"></div>
+<div id="code" class="hud panel"></div>
+<div id="ide" class="hud panel">
+  <div class="tb"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>&nbsp; traffic_light | Arduino IDE</div>
+  <div class="tool"><div class="btn" id="ide-v">✓</div><div class="btn" id="ide-u">→</div>
+    <div class="board" id="ide-b">Arduino Uno &nbsp;▾<div class="menu" id="ide-m"></div></div></div>
+  <div class="code" id="ide-c"></div>
+  <div class="con" id="ide-k"></div>
+  <div class="ring" id="r1"></div><div class="ring" id="r2"></div><div class="ring" id="r3"></div>
+</div>
+<div id="pins" class="hud"></div>
+<div id="tl" class="hud panel"></div>
+<div id="tips" class="hud"></div>
+<div id="outro" class="hud"><h1>شكراً لمشاهدتكم!</h1><p>صمّم، ركّب، جرّب… وابتكر مشروعك القادم</p></div>
+<div id="caption" class="hud"></div>
+<div id="fade"></div>
+</div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="./src/main.js"></script>
+</body></html>

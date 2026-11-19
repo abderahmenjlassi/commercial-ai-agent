@@ -1,0 +1,14 @@
+#!/bin/bash
+# Renders all frames in restart-safe chunks.
+cd "$(dirname "$0")"
+TOTAL=$(node -e "import('./src/timeline.js').then(m=>console.log(Math.ceil(m.TOTAL*m.FPS)))")
+FPS=24; CH=500; OUT=frames
+mkdir -p $OUT
+for ((s=0; s<TOTAL; s+=CH)); do
+  e=$((s+CH)); [ $e -gt $TOTAL ] && e=$TOTAL
+  for try in 1 2 3; do
+    node render.mjs $s $e $OUT $FPS 8123 2>&1 | grep -v "GL Driver" && break
+  done
+  echo "chunk $s-$e done $(date +%T)"
+done
+echo ALLDONE
