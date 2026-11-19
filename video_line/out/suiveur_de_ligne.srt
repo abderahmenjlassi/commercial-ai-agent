@@ -1,0 +1,135 @@
+1
+00:00:00,250 --> 00:00:02,840
+🤖 Robot suiveur de ligne
+
+2
+00:00:03,420 --> 00:00:03,940
+🧰 Les composants
+
+3
+00:00:04,020 --> 00:00:04,990
+🧠 Arduino Uno
+
+4
+00:00:05,070 --> 00:00:06,100
+⚙️ Driver moteur L298N
+
+5
+00:00:06,180 --> 00:00:07,520
+👁️ 2 capteurs IR (TCRT5000)
+
+6
+00:00:07,600 --> 00:00:08,540
+🛞 2 moteurs + roues
+
+7
+00:00:08,620 --> 00:00:09,540
+🔩 Châssis + roue folle
+
+8
+00:00:09,620 --> 00:00:10,730
+🔋 Batterie 7,4 V (2×18650)
+
+9
+00:00:11,310 --> 00:00:16,120
+Capteur IR : le blanc réfléchit (0), le noir absorbe (1)
+
+10
+00:00:16,200 --> 00:00:20,600
+Broche Arduino : 20 mA max. Moteur : 200 mA et plus → il faut un driver
+
+11
+00:00:20,680 --> 00:00:25,340
+Pont en H : IN1/IN2 = sens · ENA = vitesse
+
+12
+00:00:25,420 --> 00:00:28,340
+PWM : analogWrite(0 à 255) règle la puissance
+
+13
+00:00:28,920 --> 00:00:31,290
+Châssis, moteurs, roues, roue folle
+
+14
+00:00:31,370 --> 00:00:34,150
+Capteurs à l'avant, ~1 cm du sol
+
+15
+00:00:34,230 --> 00:00:37,450
+Arduino, L298N, batterie, mini-breadboard
+
+16
+00:00:37,530 --> 00:00:39,760
+Moteurs → sorties OUT1 à OUT4
+
+17
+00:00:39,840 --> 00:00:43,980
+Capteurs : VCC, GND, OUT (D2 et D3)
+
+18
+00:00:44,060 --> 00:00:47,770
+L298N : IN1–IN4 → D6 D7 D8 D9 · ENA → D5 · ENB → D10
+
+19
+00:00:47,850 --> 00:00:51,860
+Batterie → 12V/GND · 5V du L298N → Arduino · GND commun !
+
+20
+00:00:51,940 --> 00:00:53,860
+Retire les cavaliers ENA et ENB (sinon pas de PWM)
+
+21
+00:00:53,940 --> 00:00:54,770
+✅ Prêt !
+
+22
+00:00:55,350 --> 00:01:00,490
+drive(g, d) : vitesse de −255 à 255 pour chaque moteur
+
+23
+00:01:00,570 --> 00:01:04,170
+Capteur : 1 = ligne noire, 0 = sol blanc
+
+24
+00:01:04,250 --> 00:01:06,570
+0 · 0 → tout droit
+
+25
+00:01:06,650 --> 00:01:09,770
+1 · 0 → la ligne est à gauche : on tourne à gauche
+
+26
+00:01:09,850 --> 00:01:12,290
+0 · 1 → on tourne à droite
+
+27
+00:01:12,370 --> 00:01:14,710
+1 · 1 → stop
+
+28
+00:01:14,790 --> 00:01:18,510
+loop() recommence des centaines de fois par seconde ⟳
+
+29
+00:01:19,090 --> 00:01:22,050
+🔌 USB · carte Arduino Uno · bon port
+
+30
+00:01:22,130 --> 00:01:24,050
+➡️ Téléverser
+
+31
+00:01:24,630 --> 00:01:35,050
+Il suit la ligne !
+
+32
+00:01:35,130 --> 00:01:37,960
+🛑 Barre noire : stop
+
+33
+00:01:38,540 --> 00:01:41,260
+Idées : 3ᵉ capteur, vitesse variable, régulation PID
+
+34
+00:01:41,340 --> 00:01:43,260
+🌟 Bravo, ingénieur !
