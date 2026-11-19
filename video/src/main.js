@@ -468,7 +468,7 @@ function update(t) {
   setHUD($('tips'), hud.tips, tipsHTML); setHUD($('outro'), hud.outro);
   // caption
   let ca = 0, ctext;
-  if (beat) { ca = ramp(t, beat.t0 - 0.05, 0.35) * (1 - ramp(t, beat.t1 - 0.25, 0.25)); ctext = beat.text.replace(/±5%/g, '<bdi dir="ltr">±5%</bdi>'); }
+  if (beat) { ca = ramp(t, beat.t0 - 0.05, 0.35) * (1 - ramp(t, beat.t1 - 0.25, 0.25)); ctext = beat.text.replace(/±5%|\(5 − 2\) ÷ 220 ≈ 13\.6|I = \(Vs − Vf\) ÷ R|22 × 10 = 220/g, m => `<bdi dir="ltr">${m}</bdi>`); }
   if (!(sc.id === 'H' && id === 'h4')) setHUD($('caption'), ca, ctext); else setHUD($('caption'), 0, ctext);
   // scene fade (black)
   const f = Math.max(1 - ramp(t, sc.t0, 0.7), ramp(t, sc.t1 - 0.7, 0.7));
@@ -519,6 +519,6 @@ function ideUpdate(t, id) {
 }
 
 // ------------------------------------------------------------------ API
-window.TOTAL = T.TOTAL; window.FPS = T.FPS;
-window.setTime = (t) => { update(t); };
-document.fonts.ready.then(() => { window.READY = true; const q = new URLSearchParams(location.search); if (q.has('t')) update(parseFloat(q.get('t'))); });
+window.TOTAL = T.VTOTAL; window.FPS = T.FPS;
+window.setTime = (v) => { update(T.toInternal(v)); };
+document.fonts.ready.then(() => { window.READY = true; const q = new URLSearchParams(location.search); if (q.has('t')) update(T.toInternal(parseFloat(q.get('t')))); });

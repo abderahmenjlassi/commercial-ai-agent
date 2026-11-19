@@ -49,7 +49,7 @@ def bass(f, d):
     return (np.sin(2 * np.pi * f * t) + 0.25 * np.sin(2 * np.pi * 2 * f * t)) * env * 0.5
 
 # ------------------------------------------------------------ music
-BPM = 92
+BPM = 112
 beat = 60 / BPM
 bar = 4 * beat
 # Am - F - C - G, two bars each
@@ -70,10 +70,25 @@ for b in range(0, nbars, 2):
     for e in range(16):  # 16 eighth notes in two bars
         tn = t0 + e * beat / 2
         note = chord[arp_pat[e % 8] % 3] + 12 + (12 if e % 8 in (3, 7) and (b // 2) % 2 else 0)
-        sig = pluck(midi(note), 1.5)
+        sig = pluck(midi(note), 1.2)
         add(L, tn, sig, 0.10 + 0.025 * (e % 2 == 0), pan=0.35 * (1 if e % 2 else -1))
         if e % 8 == 0:
             add(L, tn, pluck(midi(chord[0] + 24), 2.2), 0.045, pan=0.0)
+
+# light drums: kick on every beat, soft hat on off-beats (adds drive for social media)
+def kick():
+    t = t_(0.25); f = 45 + 90 * np.exp(-t * 30); ph = 2 * np.pi * np.cumsum(f) / SR
+    return np.sin(ph) * np.exp(-t * 11) * 0.9
+def hat():
+    t = t_(0.05); n = rng.standard_normal(len(t)); n = np.diff(n, prepend=0)
+    return n * np.exp(-t * 90) * 0.5
+K_, H_ = kick(), hat()
+nb = int(TOTAL / beat) + 1
+for q in range(nb):
+    tq = q * beat
+    if tq < 3.0: continue
+    add(L, tq, K_, 0.20 if q % 4 == 0 else 0.15, 0.0)
+    add(L, tq + beat / 2, H_, 0.07, 0.25 * (1 if q % 2 else -1))
 
 # gentle global swell per scene: slightly fuller in intro/outro
 env = np.ones(N)

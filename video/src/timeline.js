@@ -1,6 +1,6 @@
 // Timeline: scenes, narration beats (Arabic captions) and key event times.
 // Pure data/logic (no DOM) so Node can import it for audio + subtitles too.
-export const FPS = 24;
+export const FPS = 30;
 
 export const SCENES = [
   { id: 'A', title: 'إشارة المرور بالأردوينو', sub: 'Arduino Traffic Light' },
@@ -154,4 +154,64 @@ export function srt() {
     return `${p(h)}:${p(m)}:${p(s)},${p(r, 3)}`;
   };
   return beats.map((b, i) => `${i + 1}\n${f(b.t0)} --> ${f(b.t1)}\n${b.text}\n`).join('\n');
+}
+
+
+// =====================================================================
+// SOCIAL CUT: short punchy captions + per-beat time warp.
+// Visual logic keeps running on the "internal" timeline above; the video
+// plays each beat in NEW seconds, so everything simply moves faster.
+// =====================================================================
+const SHORT = {
+  a1: ['إشارة مرور بالأردوينو… خطوة بخطوة!', 3.0], a2: ['القطع، التوصيل، والكود سطراً بسطر', 2.8],
+  b0: ['القطع المطلوبة', 2.0], b1: ['أردوينو أونو: العقل المدبّر', 2.8], b2: ['لوحة التجارب: تركيب بدون لحام', 2.8],
+  b3: ['3 صمّامات LED: أحمر وأصفر وأخضر', 3.0], b4: ['3 مقاومات 220Ω لحماية الـ LED', 3.0],
+  b5: ['7 أسلاك توصيل ذكر - ذكر', 2.6], b6: ['كابل USB للطاقة ورفع البرنامج', 2.8],
+  c1: ['الساق الطويلة (+) آنود، والقصيرة (−) كاثود', 4.0], c2: ['الجهة المسطّحة والصفيحة الكبيرة = كاثود', 3.4],
+  c3: ['بدون مقاومة؟ تيار كبير يتلف الـ LED!', 3.6], c4: ['قانون أوم: I = (Vs − Vf) ÷ R', 3.0],
+  c5: ['(5 − 2) ÷ 220 ≈ 13.6 ملي أمبير… آمن (أقل من 20)', 4.0], c6: ['أحمر أحمر بني ذهبي = 22 × 10 = 220 أوم', 3.6],
+  d1: ['كل 5 فتحات في العمود متصلة ببعضها', 4.0], d2: ['الخطوة 1: GND (بجانب المنفذ 13) ← الخط السالب (−)', 4.0],
+  d3: ['الخطوة 2: الـ LED: الساق الطويلة (+) على اليسار', 4.4], d4: ['الخطوة 3: المقاومات بين السلك والساق الطويلة', 4.2],
+  d5: ['الخطوة 4: الساق القصيرة ← GND بسلك أسود', 4.0], d6: ['الخطوة 5: المنفذ 10 للأحمر، و9 للأصفر، و8 للأخضر', 4.4],
+  d7: ['اكتملت الدائرة!', 3.2],
+  e1: ['الكود: تعريف المنافذ 10 و9 و8', 3.4], e2: ['setLights: HIGH يضيء · LOW يطفئ', 3.8],
+  e3: ['setup: المنافذ الثلاثة OUTPUT', 3.0], e4: ['loop: أحمر 5 ثوانٍ (delay بالميلي ثانية)', 4.0],
+  e5: ['ثم أخضر 5 ثوانٍ', 2.4], e6: ['ثم أصفر ثانيتين… وتتكرر الدورة', 3.0],
+  f1: ['وصّل USB: تضيء لمبة ON', 3.2], f2: ['افتح Arduino IDE والصق الكود', 2.6],
+  f3: ['Tools ← Board: Arduino Uno، ثم اختر Port', 3.4], f4: ['اضغط Upload… وانطلق!', 3.2],
+  g1: ['الأحمر 5 ثوانٍ، ثم الأخضر 5 ثوانٍ، ثم الأصفر ثانيتين', 12.6], g2: ['وتتكرر تلقائياً ⏩', 3.6],
+  h1: ['إذا لم يضئ: اعكس الـ LED، ولا تنسَ المقاومة', 3.6], h2: ['تأكد من GND، وافصل USB قبل التعديل', 3.0],
+  h3: ['طوّر: زر مشاة أو تقاطع كامل', 2.8], h4: ['شكراً لمشاهدتكم!', 3.0],
+};
+for (const b of beats) { b.text = SHORT[b.id][0]; b.nd = SHORT[b.id][1]; }
+const VLEAD = 0.35, VTAIL = 0.3;
+const segs = []; // {t0,t1 (internal), v0,v1 (video)}
+let v = 0;
+for (const sc of SCENES) {
+  let tp = sc.t0;
+  const push = (t0, t1, nd) => { if (t1 - t0 > 1e-6) { segs.push({ t0, t1, v0: v, v1: v + nd }); v += nd; } };
+  const firstBeat = sc.beats[0];
+  push(tp, firstBeat.t0, VLEAD); tp = firstBeat.t0;
+  for (const b of sc.beats) { b.v0 = v; push(b.t0, b.t1 + GAP, b.nd); b.v1 = b.v0 + b.nd - GAP * (b.nd / (b.t1 + GAP - b.t0)); tp = b.t1 + GAP; }
+  push(tp, sc.t1, VTAIL);
+  sc.v0 = segs.find(g => g.t0 === sc.t0).v0; sc.v1 = v;
+}
+export const VTOTAL = v;
+export function toInternal(vt) {
+  if (vt <= 0) return 0; if (vt >= VTOTAL) return TOTAL;
+  for (const g of segs) if (vt < g.v1) return g.t0 + ((vt - g.v0) / (g.v1 - g.v0)) * (g.t1 - g.t0);
+  return TOTAL;
+}
+export function toVideo(t) {
+  for (const g of segs) if (t < g.t1) return g.v0 + ((t - g.t0) / (g.t1 - g.t0)) * (g.v1 - g.v0);
+  return VTOTAL;
+}
+export function sfxVideo() {
+  const out = []; const last = {};
+  for (const e of sfxEvents()) { const tv = toVideo(e.t); if (last[e.k] !== undefined && tv - last[e.k] < 0.3) continue; last[e.k] = tv; out.push({ t: tv, k: e.k }); }
+  return out;
+}
+export function srtVideo() {
+  const f = x => { const ms = Math.round(x * 1000), h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60, r = ms % 1000; const p = (n, l = 2) => String(n).padStart(l, '0'); return `${p(h)}:${p(m)}:${p(s)},${p(r, 3)}`; };
+  return beats.map((b, i) => `${i + 1}\n${f(b.v0)} --> ${f(b.v0 + b.nd - 0.1)}\n${b.text}\n`).join('\n');
 }
