@@ -4,7 +4,10 @@ import * as M from './models.js';
 import * as T from './timeline.js';
 
 const { B, K, SC } = T;
-const W = 1920, H = 1080;
+const QP = new URLSearchParams(location.search);
+const VERT = QP.get('vert') === '1';
+let vkNow = 1.5, distMin = 0, voffNow = 230; const VK = 1.75, VOFF = +(QP.get('voff') || 230); // vertical (9:16) mode: dolly-out factor + downward image shift
+const W = VERT ? 1080 : 1920, H = VERT ? 1920 : 1080;
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const sstep = x => { x = clamp(x); return x * x * (3 - 2 * x); };
@@ -15,7 +18,6 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // ------------------------------------------------------------------ renderer / scene
 const canvas = $('gl');
-const QP = new URLSearchParams(location.search);
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: QP.get('aa') !== '0', preserveDrawingBuffer: true });
 renderer.setPixelRatio(1); renderer.setSize(W * +(QP.get('rs') || 1), H * +(QP.get('rs') || 1), false);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -142,7 +144,7 @@ const resBig = M.makeResistor({ straight: true, lead: 14 }); resBig.scale.setSca
 scene.traverse(o => { const m = o.material; if (m && (m.metalness > 0.5 || m.isMeshPhysicalMaterial)) { m.envMap = envTex; m.envMapIntensity = 0.45; m.needsUpdate = true; } });
 
 // ------------------------------------------------------------------ labels
-const svg = $('lines'), labelLayer = $('labels'); const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = $('lines'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); const labelLayer = $('labels'); const SVGNS = 'http://www.w3.org/2000/svg';
 const pool = {};
 function showLabels(list) {
   const seen = {};
@@ -155,7 +157,7 @@ function showLabels(list) {
     if (o.text !== L.text) { o.el.innerHTML = L.text; o.text = L.text; }
     const col = L.color || '#38bdf8'; o.el.style.borderColor = col; o.path.setAttribute('stroke', col); o.dot.setAttribute('fill', col);
     const p = L.anchor.clone().project(camera); const ax = (p.x * 0.5 + 0.5) * W, ay = (-p.y * 0.5 + 0.5) * H;
-    const cx = ax + L.dx, cy = ay + L.dy; const w = o.el.offsetWidth, h = o.el.offsetHeight;
+    const w = o.el.offsetWidth, h = o.el.offsetHeight; const cx = clamp(ax + L.dx, w / 2 + 16, W - w / 2 - 16), cy = clamp(ay + L.dy, h / 2 + 16, H - h / 2 - 16);
     o.el.style.left = cx + 'px'; o.el.style.top = cy + 'px'; o.el.style.opacity = L.a; o.el.style.visibility = 'visible';
     const vx = cx - ax, vy = cy - ay; const s = Math.min(vx ? (w / 2 + 6) / Math.abs(vx) : 9, vy ? (h / 2 + 6) / Math.abs(vy) : 9, 1);
     o.path.setAttribute('d', `M${ax},${ay} L${cx - vx * s},${cy - vy * s}`); o.path.style.opacity = L.a; o.dot.setAttribute('cx', ax); o.dot.setAttribute('cy', ay); o.dot.style.opacity = L.a;
@@ -220,8 +222,10 @@ function camAt(keys, t) {
   return { p: V(lerp(a.p[0], b.p[0], u), lerp(a.p[1], b.p[1], u), lerp(a.p[2], b.p[2], u)), l: V(lerp(a.l[0], b.l[0], u), lerp(a.l[1], b.l[1], u), lerp(a.l[2], b.l[2], u)), f: lerp(a.f || 38, b.f || 38, u) };
 }
 function placeCam(c, t, drift = 1) {
-  camera.position.copy(c.p).add(V(Math.sin(t * 0.37) * 2.5 * drift, Math.sin(t * 0.29) * 1.5 * drift, 0));
-  camera.fov = c.f; camera.updateProjectionMatrix(); camera.lookAt(c.l); camera.updateMatrixWorld(true);
+  let p = c.p, f = c.f;
+  if (VERT) { const dd = c.p.distanceTo(c.l); const k = distMin ? Math.max(1.15, distMin / dd) : vkNow; p = c.l.clone().add(c.p.clone().sub(c.l).multiplyScalar(k)); f = c.f * 1.25; }
+  camera.position.copy(p).add(V(Math.sin(t * 0.37) * 2.5 * drift, Math.sin(t * 0.29) * 1.5 * drift, 0));
+  camera.fov = f; if (VERT) camera.setViewOffset(W, H, 0, -voffNow, W, H); camera.updateProjectionMatrix(); camera.lookAt(c.l); camera.updateMatrixWorld(true);
 }
 const orbit = (cx, cy, cz, r, h, az, lx = 0, ly = 0) => ({ p: [cx + Math.sin(az) * r, h, cz + Math.cos(az) * r], l: [cx + lx, ly, cz], f: 38 });
 
@@ -293,6 +297,7 @@ function update(t) {
   let cam;
   let ledState = null; // for build LEDs
   const sT = t - sc.t0;
+  if (VERT) { vkNow = { A: 1.0, B: 1.2, C: 1.25, D: 2, E: 1.2, F: 1.85, G: 1.35, H: 1.35 }[sc.id]; distMin = sc.id === 'D' ? 300 : 0; voffNow = { A: 70, B: 30, C: 150, D: 300, E: 240, F: 150, G: 170, H: 170 }[sc.id]; }
 
   // title (small) for all scenes except intro where it's big
   const titleIn = ramp(t, sc.t0 + 0.4, 0.6) * (1 - ramp(t, sc.t0 + (sc.id === 'A' ? 99 : 5.5), 0.6));
@@ -305,9 +310,9 @@ function update(t) {
   if (sc.id === 'A') {
     gIntro.visible = TL.visible = true;
     setShadow(-60, 0, 170, 340);
-    TL.position.set(-120, 0, 0); TL.scale.setScalar(1.0); TL.rotation.y = 0.35 * Math.sin(sT * 0.5) - 0.15;
+    TL.position.set(VERT ? 0 : -120, 0, 0); TL.scale.setScalar(1.0); TL.rotation.y = 0.35 * Math.sin(sT * 0.5) - 0.15;
     const c = sT - 1.2; const p = c < 0 ? -1 : c % 4.8; TL.userData.set(c < 0 ? null : p < 1.8 ? 'R' : p < 3.6 ? 'G' : 'Y');
-    cam = { p: V(lerp(0, 40, sT / 15), 150 + 6 * Math.sin(sT * 0.3), lerp(560, 500, sT / 15)), l: V(-50, 112, 0), f: 38 };
+    cam = { p: V(VERT ? 0 : lerp(0, 40, sT / 15), 150 + 6 * Math.sin(sT * 0.3), lerp(560, 500, sT / 15)), l: V(VERT ? 0 : -50, 112, 0), f: 38 };
   }
 
   if (sc.id === 'B') {
@@ -326,7 +331,7 @@ function update(t) {
     });
     const wide = { t: B.b0.t0, p: [0, 240, 1040], l: [0, 25, 0], f: 36 };
     const keys = [wide, { ...wide, t: B.b0.t1 - 0.3 }];
-    partsStages.forEach((s, i) => { const b = B['b' + (i + 1)]; const x = s.s.position.x; const k = { p: [x + 28, 100, 275], l: [x + 62, 42, 0], f: 36 };
+    partsStages.forEach((s, i) => { const b = B['b' + (i + 1)]; const x = s.s.position.x; const k = VERT ? { p: [x, 100, 275], l: [x, 42, 0], f: 36 } : { p: [x + 28, 100, 275], l: [x + 62, 42, 0], f: 36 };
       keys.push({ ...k, t: b.t0 + 1.6 }, { ...k, t: b.t1 - 0.1 }); });
     cam = camAt(keys, t);
     if (act !== undefined) { const d = PARTS[act]; hud.card = ramp(t, B['b' + (act + 1)].t0 + 0.8, 0.5) * (1 - ramp(t, B['b' + (act + 1)].t1 - 0.3, 0.3));
@@ -352,6 +357,7 @@ function update(t) {
       { t: B.c5.t1, p: [-55, 80, 320], l: [-5, 62, 0], f: 38 },
       { t: B.c6.t0 + 1.6, p: [120, 85, 330], l: [145, 64, 0], f: 38 },
       { t: B.c6.t1, p: [118, 85, 320], l: [145, 64, 0], f: 38 }];
+    if (VERT) keys.forEach(k => { const cx = k.t >= B.c6.t0 ? 135 : -60; k.p[0] = cx; k.l[0] = cx; });
     cam = camAt(keys, t);
     if (id === 'c1') {
       const a = ramp(t, B.c1.t0 + 1.0, 0.6) * (1 - ramp(t, B.c1.t1 - 0.3, 0.3));
@@ -425,7 +431,7 @@ function update(t) {
     gBuild.visible = true; fullBuild(); scene.updateMatrixWorld(true); setShadow(0, 40, 130, 320);
     const az = lerp(-0.45, 0.35, sT / (sc.t1 - sc.t0));
     cam = { p: V(-100 + Math.sin(az) * 240, 150, 60 + Math.cos(az) * 240), l: V(-100 - 15, 6, 40), f: 38 };
-    cam.p = V(5 + Math.sin(az) * 215, 140, 40 + Math.cos(az) * 215); cam.l = V(-88, 8, 40);
+    cam.p = V(5 + Math.sin(az) * 215, 140, 40 + Math.cos(az) * 215); cam.l = V(VERT ? 5 : -88, 8, 40);
     const state = id === 'e4' ? 'R' : id === 'e5' ? 'G' : id === 'e6' ? 'Y' : null;
     setLeds(state);
     hud.kid = ramp(t, SC.E.t0 + 0.6, 0.6) * (1 - ramp(t, SC.E.t1 - 0.5, 0.4)); kidHTMLs = id ? kidHTML(id, t) : undefined;
@@ -441,6 +447,7 @@ function update(t) {
     setLeds(done ? 'R' : null);
     const keys = [{ t: B.f1.t0, p: [-120, 150, 330], l: [-120, 10, 55], f: 38 }, { t: B.f1.t1 - 0.5, p: [-70, 130, 290], l: [-85, 8, 55], f: 38 },
       { t: B.f2.t0 + 1.2, p: [-40, 200, 470], l: [-40, 8, 52], f: 38 }, { t: B.f4.t1, p: [-40, 190, 455], l: [-40, 8, 52], f: 38 }];
+    if (VERT) keys.forEach(k => { k.l[0] = -100; k.p[0] = -100; });
     cam = camAt(keys, t);
     if (id === 'f1') { labels.push({ id: 'usb', a: ramp(t, K.usbIn + 1.2, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'كابل USB 🔌', anchor: V(-100, 2, 90), dx: 0, dy: 110, color: '#94a3b8' });
       labels.push({ id: 'on', a: ramp(t, K.powerOn + 0.5, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'لمبة صغيرة 💚', anchor: ard.localToWorld(V(...ledOnPos())), dx: 80, dy: -120, color: '#4ade80' }); }
@@ -454,7 +461,7 @@ function update(t) {
     const st = T.lightState(t - K.cycle0 + (0)); const state = t < K.cycle0 ? 'R' : st;
     setLeds(state); TL.userData.set(state);
     const az = sc.id === 'G' ? lerp(-0.12, 0.18, sT / (sc.t1 - sc.t0)) : lerp(0.18, -0.15, sT / (sc.t1 - sc.t0));
-    const tx = sc.id === 'H' ? 100 : 38;
+    const tx = VERT ? 40 : (sc.id === 'H' ? 100 : 38);
     const rr = sc.id === 'H' ? 270 : 305;
     cam = { p: V(tx + Math.sin(az) * rr, 140, 35 + Math.cos(az) * rr), l: V(tx, 52, 35), f: 38 };
     if (sc.id === 'G') {

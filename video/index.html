@@ -138,8 +138,30 @@ html,body{background:#eaf1fb}
 #outro{background:radial-gradient(ellipse at 50% 50%,rgba(234,241,251,.55),rgba(234,241,251,.9))}
 #outro h1{text-shadow:none;color:#10203f}#outro p{color:#3d5280}
 #fade{background:#f4f8fd}
+
+/* ===== vertical 9:16 (Reels / TikTok / Shorts) ===== */
+html.vert,html.vert body{width:1080px;height:1920px}
+html.vert #stage,html.vert canvas#gl,html.vert svg#lines{width:1080px;height:1920px}
+html.vert #title{right:50px;top:64px}
+html.vert #title h1{font-size:56px}
+html.vert #title.big{top:300px;left:50px;right:50px;text-align:center}
+html.vert #title.big h1{font-size:124px}
+html.vert #title.big .en{text-align:center}
+html.vert #card,html.vert #stepper,html.vert #formula{left:60px;right:auto;top:230px;width:960px}
+html.vert #stepper{padding:22px 30px}
+html.vert .kid{left:60px;top:230px;width:960px;padding:20px 20px 24px}
+html.vert .kbody{gap:28px;min-height:340px}
+html.vert #caption{width:960px;bottom:250px;font-size:58px;padding:16px 24px 18px}
+html.vert #pins{top:70px;gap:10px}
+html.vert .chip{font-size:27px;padding:8px 14px;white-space:nowrap}html.vert .chip span{white-space:nowrap}
+html.vert #road{top:190px;width:960px}
+html.vert #tl{display:none}
+html.vert #outro{width:1080px;height:1920px}
+html.vert #outro h1{font-size:110px}
+html.vert #card .bigemo{font-size:96px}
 </style></head>
-<body><div id="stage">
+<body>
+<script>if(location.search.indexOf('vert=1')>=0)document.documentElement.classList.add('vert')</script><div id="stage">
 <canvas id="gl" width="1920" height="1080"></canvas>
 <div id="vig"></div>
 <svg id="lines" viewBox="0 0 1920 1080"></svg>

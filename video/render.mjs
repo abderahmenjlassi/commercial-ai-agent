@@ -5,10 +5,10 @@ const [,, s, e, out, fpsArg, portArg] = process.argv;
 const fps = +(fpsArg || 30), port = portArg || 8123;
 fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'] });
-const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+const page = await browser.newPage({ viewport: process.env.VERT ? { width: 1080, height: 1920 } : { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
 page.on('console', m => { if (m.type() === 'error') console.error('[page]', m.text()); });
 page.on('pageerror', e => console.error('[pageerror]', e.message));
-await page.goto(`http://localhost:${port}/index.html`);
+await page.goto(`http://localhost:${port}/index.html${process.env.VERT ? '?vert=1' : ''}`);
 await page.waitForFunction(() => window.READY === true, null, { timeout: 120000 });
 const t0 = Date.now();
 for (let f = +s; f < +e; f++) {
