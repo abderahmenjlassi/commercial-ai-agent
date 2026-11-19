@@ -17,7 +17,7 @@ svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-even
 /* title */
 #title{right:64px;top:44px;text-align:right}
 #title .pill{display:inline-block;font-size:22px;font-weight:700;color:#06121f;background:var(--cy);padding:2px 18px;border-radius:99px}
-#title h1{font-size:50px;font-weight:700;line-height:1.25;margin-top:8px;text-shadow:0 3px 18px rgba(0,0,0,.6)}
+#title h1{font-size:54px;font-weight:700;line-height:1.25;margin-top:8px;text-shadow:0 3px 18px rgba(0,0,0,.6)}
 #title .en{font-size:24px;color:var(--mut);direction:ltr;text-align:right;letter-spacing:.5px}
 #title.big{top:250px;right:90px}
 #title.big h1{font-size:96px;line-height:1.15}
@@ -71,8 +71,8 @@ svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-even
 #ide .con{background:#05080f;font-family:'DejaVu Sans Mono',monospace;font-size:20px;padding:10px 16px;height:106px;color:#9fb0d8;white-space:pre;overflow:hidden}
 .ring{position:absolute;border:4px solid var(--am);border-radius:14px;box-shadow:0 0 22px rgba(251,191,36,.8);pointer-events:none;opacity:0}
 /* demo */
-#pins{left:50%;transform:translateX(-50%);top:150px;display:flex;gap:18px}
-.chip{display:flex;align-items:center;gap:12px;padding:8px 22px;font-size:28px;font-weight:700;border-radius:16px;background:var(--panel);border:1.5px solid var(--bd);direction:ltr}
+#pins{left:50%;transform:translateX(-50%);top:24px;display:flex;gap:18px;direction:ltr}
+.chip{display:flex;align-items:center;gap:12px;padding:8px 24px;font-size:34px;font-weight:700;border-radius:16px;background:var(--panel);border:1.5px solid var(--bd);direction:ltr}
 .chip .dot{width:26px;height:26px;border-radius:50%;background:#2a3350}
 .chip.on .dot{box-shadow:0 0 20px currentColor;background:currentColor}
 .chip .st{min-width:70px;color:#8795bb}.chip.on .st{color:#fff}
@@ -88,6 +88,26 @@ svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-even
 #outro{left:0;top:0;width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,rgba(10,18,38,.35),rgba(6,10,22,.82))}
 #outro h1{font-size:120px;font-weight:700;text-shadow:0 4px 30px rgba(0,0,0,.7)}
 #outro p{font-size:44px;color:#b9cdf6;margin-top:10px}
+
+.bigemo{font-size:96px;text-align:center;line-height:1.15;margin-bottom:4px}
+#card .bigemo{font-size:110px}
+.kid{left:56px;top:140px;width:1010px;padding:22px 30px 26px;text-align:center}
+.ktitle{font-size:56px;font-weight:700;margin-bottom:6px}
+.kbody{display:flex;justify-content:center;align-items:center;gap:46px;min-height:360px;direction:ltr}
+.kcode{direction:ltr;text-align:left;font-family:'DejaVu Sans Mono',monospace;font-size:27px;line-height:1.5;color:#9fe8b4;background:#0a1226;border:1.5px solid var(--bd);border-radius:14px;padding:10px 22px;display:inline-block;white-space:pre}
+.house{position:relative;width:176px;text-align:center}
+.house .bulb{font-size:58px;line-height:1.1}
+.house .roof{width:0;height:0;margin:0 auto;border-left:88px solid transparent;border-right:88px solid transparent;border-bottom:74px solid var(--c)}
+.house .wall{width:144px;margin:0 auto;height:112px;background:#f8fafc;color:#0b1020;font-size:68px;font-weight:700;line-height:112px;border-radius:0 0 12px 12px}
+.sw{width:210px;height:104px;border-radius:52px;position:relative;background:#475569;margin:0 auto 12px}
+.sw.on{background:#22c55e;box-shadow:0 0 28px rgba(34,197,94,.7)}
+.sw i{position:absolute;top:10px;left:10px;width:84px;height:84px;border-radius:50%;background:#fff}
+.sw.on i{left:116px}
+.col2{text-align:center;font-size:48px;font-weight:700}
+#road{left:50%;transform:translateX(-50%);top:128px;width:1000px;height:98px;overflow:hidden;direction:ltr;background:#2b3345;padding:0}
+#road .dash{position:absolute;left:0;right:0;top:46px;height:6px;background:repeating-linear-gradient(90deg,#fde68a 0 34px,transparent 34px 68px);opacity:.8}
+#road .zebra{position:absolute;left:62%;width:15%;top:0;bottom:0;background:repeating-linear-gradient(0deg,#f1f5f9 0 12px,transparent 12px 24px);opacity:.75}
+#road span{position:absolute;font-size:70px;top:12px;line-height:1}
 /* labels */
 #labels .lbl{position:absolute;transform:translate(-50%,-50%);background:rgba(7,11,24,.88);border:2px solid var(--cy);border-radius:12px;padding:5px 16px;font-size:27px;font-weight:700;white-space:nowrap;opacity:0;visibility:hidden}
 #fade{position:absolute;inset:0;background:#05080f;opacity:1;pointer-events:none}
@@ -110,10 +130,12 @@ svg#lines{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-even
   <div class="con" id="ide-k"></div>
   <div class="ring" id="r1"></div><div class="ring" id="r2"></div><div class="ring" id="r3"></div>
 </div>
+<div id="kid" class="hud panel kid"></div>
+<div id="road" class="hud panel"></div>
 <div id="pins" class="hud"></div>
 <div id="tl" class="hud panel"></div>
 <div id="tips" class="hud"></div>
-<div id="outro" class="hud"><h1>شكراً لمشاهدتكم!</h1><p>صمّم، ركّب، جرّب… وابتكر مشروعك القادم</p></div>
+<div id="outro" class="hud"><h1>أحسنتم! 🌟</h1><p>أنتم مهندسون صغار 🧠🔧</p></div>
 <div id="caption" class="hud"></div>
 <div id="fade"></div>
 </div>

@@ -23,7 +23,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-const BG = 0x0a1226;
+const BG = 0x16265c;
 scene.background = new THREE.Color(BG);
 scene.fog = new THREE.Fog(BG, 520, 1700);
 const pm = new THREE.PMREMGenerator(renderer);
@@ -42,7 +42,7 @@ function setShadow(cx, cz, ext, h = 300) {
 
 // floor
 const floorTex = M.canvasTex(512, 512, (g, w, h) => {
-  g.fillStyle = '#0f1a33'; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#1b3070'; g.fillRect(0, 0, w, h);
   g.strokeStyle = 'rgba(120,160,230,0.13)'; g.lineWidth = 2;
   for (let i = 0; i <= 5; i++) { const p = (i * w) / 5; g.beginPath(); g.moveTo(p, 0); g.lineTo(p, h); g.stroke(); g.beginPath(); g.moveTo(0, p); g.lineTo(w, p); g.stroke(); }
   g.strokeStyle = 'rgba(120,170,255,0.30)'; g.lineWidth = 4; g.strokeRect(0, 0, w, h);
@@ -167,7 +167,7 @@ function setHUD(el, a, html) {
   el.style.opacity = a; el.style.visibility = a > 0.01 ? 'visible' : 'hidden';
   el.style.transform = el.dataset.tx ? el.dataset.tx.replace('@', (1 - a) * 16) : `translateY(${(1 - a) * 16}px)`;
 }
-for (const id of ['pins', 'tl', 'caption']) $(id).dataset.tx = 'translateX(-50%) translateY(@px)';
+for (const id of ['pins', 'tl', 'caption', 'road']) $(id).dataset.tx = 'translateX(-50%) translateY(@px)';
 const fadeEl = $('fade');
 const inWin = (t, t0, t1, f = 0.5) => Math.min(ramp(t, t0, f), 1 - ramp(t, t1 - f, f));
 
@@ -243,17 +243,35 @@ function buildState(t, o = {}) {
 function fullBuild() { ard.visible = bb.visible = true; ard.position.copy(ARD); bb.position.set(0, BBY, 0); leds.forEach(l => { l.visible = true; l.position.y = BBY + 4; }); ress.forEach(r => { r.visible = true; r.position.y = BBY + 3.4; });
   gndWire.userData.setProgress(1); cathW.forEach(w => w.userData.setProgress(1)); sigW.forEach(w => w.userData.setProgress(1)); }
 
-const STEPS = ['تجهيز اللوحتين', 'وصل GND', 'تركيب الـ LED', 'تركيب المقاومات', 'أسلاك الأرضي', 'أسلاك المنافذ'];
-function stepperHTML(cur) { return '<h3>خطوات التركيب</h3>' + STEPS.map((s, i) => `<div class="step ${i < cur ? 'done' : i === cur ? 'now' : ''}"><i>${i < cur ? '✓' : i + 1}</i>${s}</div>`).join(''); }
+const STEPS = ['🧱 نجهّز اللوحتين', '🏠 طريق العودة (GND)', '💡 نركّب المصابيح', '🛡️ نركّب الحرّاس', '⚫ أسلاك العودة', '🌈 أسلاك الألوان'];
+const STEPS_F = ['🔌 نوصل الكابل', '💻 نفتح البرنامج', '🎯 نختار Arduino Uno', '➡️ نضغط السهم'];
+function stepperHTML(cur, list = STEPS, title = 'خطوات البناء') { return `<h3>${title}</h3>` + list.map((s, i) => `<div class="step ${i < cur ? 'done' : i === cur ? 'now' : ''}"><i>${i < cur ? '✓' : i + 1}</i>${s}</div>`).join(''); }
 
 const PARTS = [
-  { n: 1, ar: 'لوحة أردوينو أونو', en: 'Arduino Uno R3', c: '1', d: 'العقل المدبّر: تنفّذ البرنامج وترسل 5 فولت إلى كل ضوء.' },
-  { n: 2, ar: 'لوحة التجارب', en: 'Breadboard', c: '1', d: 'تركيب الدائرة وتعديلها بدون لحام.' },
-  { n: 3, ar: 'صمّامات LED', en: 'LED — Red · Yellow · Green (5 mm)', c: '3', d: 'أحمر وأصفر وأخضر: أضواء الإشارة.' },
-  { n: 4, ar: 'مقاومات 220 أوم', en: 'Resistor 220 Ω (¼ W)', c: '3', d: 'تحدّ من التيار المارّ في كل LED لحمايته.' },
-  { n: 5, ar: 'أسلاك توصيل', en: 'Jumper wires (male–male)', c: '7', d: 'لربط الأردوينو بلوحة التجارب وتوصيل الأرضي.' },
-  { n: 6, ar: 'كابل USB', en: 'USB cable (Type A to Type B)', c: '1', d: 'لتشغيل اللوحة ورفع البرنامج من الحاسوب.' },
+  { n: 1, e: '🧠', ar: 'الأردوينو', c: 1, d: 'الدماغ الذي يعطي الأوامر' },
+  { n: 2, e: '🧱', ar: 'لوحة التجارب', c: 1, d: 'نركّب عليها مثل الليغو' },
+  { n: 3, e: '💡', ar: 'المصابيح', c: 3, d: 'أحمر وأصفر وأخضر' },
+  { n: 4, e: '🛡️', ar: 'الحرّاس (المقاومات)', c: 3, d: 'يحمون المصابيح' },
+  { n: 5, e: '🧵', ar: 'الأسلاك', c: 7, d: 'جسور تمشي عليها الكهرباء' },
+  { n: 6, e: '🔌', ar: 'كابل USB', c: 1, d: 'يعطي الأردوينو طاقة' },
 ];
+
+// ---- kid-friendly "code in pictures" cards (scene E)
+const EMO = { red: '🔴', yellow: '🟡', green: '🟢' };
+function kidHTML(id, t) {
+  const b = B[id]; const frac = clamp((t - b.t0) / (b.t1 - b.t0));
+  const houses = (sc = 1) => UNITS.map((u, i) => `<div class="house" style="--c:${u.css};opacity:${clamp(frac * 4 - i * 0.4 + 0.2)};transform:scale(${sc})"><div class="bulb">${EMO[u.key]}</div><div class="roof"></div><div class="wall">${u.pinName}</div></div>`).join('');
+  const code = c => `<div class="kcode">${c}</div>`;
+  if (id === 'e1') return `<div class="ktitle">لكل مصباح بيت برقم 🏠</div><div class="kbody">${houses()}</div>${code('RED_PIN    = 10;\nYELLOW_PIN = 9;\nGREEN_PIN  = 8;')}`;
+  if (id === 'e2') return `<div class="ktitle">أوامر الدماغ</div><div class="kbody"><div class="col2"><div class="sw on"><i></i></div>💡 أضئ</div><div class="col2"><div class="sw"><i></i></div>🌑 أطفئ</div></div>${code('HIGH  = on      LOW = off')}`;
+  if (id === 'e3') { const arrows = '➜➜➜'; return `<div class="ktitle">الدماغ يرسل الكهرباء للبيوت</div><div class="kbody"><div style="font-size:150px">🧠</div><div style="font-size:90px;color:#fde047;opacity:${0.55 + 0.45 * Math.sin(t * 6)}">${arrows}</div><div style="transform:scale(.8);display:flex;gap:14px">${houses(0.75)}</div></div>${code('pinMode(pin, OUTPUT);')}`; }
+  const cfg = { e4: ['red', 5, '#ef4444', 'setLights(HIGH, LOW, LOW);\ndelay(5000);   // 5 seconds', 'قف! 🛑'], e5: ['green', 5, '#22c55e', 'setLights(LOW, LOW, HIGH);\ndelay(5000);   // 5 seconds', 'امشِ! 🚶'], e6: ['yellow', 2, '#fbbf24', 'setLights(LOW, HIGH, LOW);\ndelay(2000);   // 2 seconds', 'استعد! ⚠️'] }[id];
+  if (!cfg) return undefined;
+  const [, N, col, c, word] = cfg; const n = Math.max(1, N - Math.floor(frac * N * 0.98));
+  const ring = `<svg width="270" height="270" viewBox="0 0 270 270"><circle cx="135" cy="135" r="112" fill="${col}" opacity=".22"/><circle cx="135" cy="135" r="112" fill="none" stroke="#fff" stroke-width="16" opacity=".22"/><circle cx="135" cy="135" r="112" fill="none" stroke="${col}" stroke-width="18" stroke-linecap="round" stroke-dasharray="704" stroke-dashoffset="${(704 * frac).toFixed(1)}" transform="rotate(-90 135 135)"/><text x="135" y="178" text-anchor="middle" font-size="120" font-weight="700" fill="#fff" font-family="DejaVu Sans">${n}</text></svg>`;
+  const loop = id === 'e6' ? `<div style="font-size:84px;transform:rotate(${(t * 140) % 360}deg);display:inline-block">🔁</div>` : `<div style="font-size:110px">⏳</div>`;
+  return `<div class="ktitle">${word}</div><div class="kbody">${ring}${loop}</div>${code(c)}`;
+}
 
 // ------------------------------------------------------------------ main update
 function update(t) {
@@ -263,8 +281,8 @@ function update(t) {
   const id = beat ? beat.id : '';
   let labels = [];
   // default HUD states (fade out); scenes switch on what they need
-  const hud = { title: 0, card: 0, stepper: 0, formula: 0, code: 0, ide: 0, pins: 0, tl: 0, tips: 0, outro: 0 };
-  let cardHTML, stepHTML, formHTML, pinsHTML, tlHTML, tipsHTML;
+  const hud = { title: 0, card: 0, stepper: 0, formula: 0, code: 0, ide: 0, pins: 0, tl: 0, tips: 0, outro: 0, kid: 0, road: 0 };
+  let cardHTML, stepHTML, formHTML, pinsHTML, tlHTML, tipsHTML, kidHTMLs, roadHTML;
   let cam;
   let ledState = null; // for build LEDs
   const sT = t - sc.t0;
@@ -272,9 +290,9 @@ function update(t) {
   // title (small) for all scenes except intro where it's big
   const titleIn = ramp(t, sc.t0 + 0.4, 0.6) * (1 - ramp(t, sc.t0 + (sc.id === 'A' ? 99 : 5.5), 0.6));
   const titleEl = $('title'); titleEl.classList.toggle('big', sc.id === 'A');
-  titleEl.querySelector('.pill').textContent = sc.id === 'A' ? 'مشروع للمبتدئين' : `الجزء ${T.SCENES.indexOf(sc) + 1} من ${T.SCENES.length}`;
+  titleEl.querySelector('.pill').textContent = sc.id === 'A' ? 'مغامرة للصغار 🚀' : `الجزء ${T.SCENES.indexOf(sc) + 1} من ${T.SCENES.length}`;
   titleEl.querySelector('h1').textContent = sc.id === 'A' ? 'إشارة المرور' : sc.title;
-  titleEl.querySelector('.en').textContent = sc.id === 'A' ? 'بالأردوينو — Arduino Traffic Light' : sc.sub;
+  titleEl.querySelector('.en').textContent = sc.id === 'A' ? 'مع الأردوينو 🧠' : sc.sub;
   hud.title = sc.id === 'A' ? ramp(t, 0.9, 0.9) : (sc.id === 'G' ? 0 : titleIn);
 
   if (sc.id === 'A') {
@@ -305,7 +323,7 @@ function update(t) {
       keys.push({ ...k, t: b.t0 + 1.6 }, { ...k, t: b.t1 - 0.1 }); });
     cam = camAt(keys, t);
     if (act !== undefined) { const d = PARTS[act]; hud.card = ramp(t, B['b' + (act + 1)].t0 + 0.8, 0.5) * (1 - ramp(t, B['b' + (act + 1)].t1 - 0.3, 0.3));
-      cardHTML = `<div><span class="num">${d.n}</span><h2>${d.ar}</h2></div><div class="en">${d.en}</div><div class="cnt">العدد: ${d.c}</div><p>${d.d}</p>`; }
+      cardHTML = `<div class="bigemo">${d.e}</div><div><span class="num">${d.n}</span><h2>${d.ar}</h2></div><div class="cnt">العدد: ${d.c}</div><div style="font-size:42px;margin:4px 0">${Array(d.c).fill(d.e).join(' ')}</div><p>${d.d}</p>`; }
   }
 
   if (sc.id === 'C') {
@@ -330,30 +348,27 @@ function update(t) {
     cam = camAt(keys, t);
     if (id === 'c1') {
       const a = ramp(t, B.c1.t0 + 1.0, 0.6) * (1 - ramp(t, B.c1.t1 - 0.3, 0.3));
-      labels.push({ id: 'an', a, text: 'الساق الطويلة = الآنود <span style="color:#fca5a5">(+)</span>', anchor: lw(V(-1.27, -16, 0)), dx: -330, dy: 20, color: '#fca5a5' });
-      labels.push({ id: 'ca', a: a * ramp(t, B.c1.t0 + 2.2, 0.5), text: 'الساق القصيرة = الكاثود <span style="color:#93c5fd">(−)</span>', anchor: lw(V(1.27, -13, 0)), dx: 340, dy: 60, color: '#93c5fd' });
+      labels.push({ id: 'an', a, text: 'الساق الطويلة (+) 🙂', anchor: lw(V(-1.27, -16, 0)), dx: -330, dy: 20, color: '#fca5a5' });
+      labels.push({ id: 'ca', a: a * ramp(t, B.c1.t0 + 2.2, 0.5), text: 'الساق القصيرة (−) 🙃', anchor: lw(V(1.27, -13, 0)), dx: 340, dy: 60, color: '#93c5fd' });
     }
-    if (c2) {
-      const a = ramp(t, B.c2.t0 + 1.4, 0.6) * (1 - ramp(t, B.c2.t1 - 0.3, 0.3));
-      labels.push({ id: 'flat', a, text: 'جهة مسطّحة = الكاثود', anchor: lw(V(2.4, 0.5, 0)), dx: 330, dy: 90, color: '#93c5fd' });
-      labels.push({ id: 'cup', a: a * ramp(t, B.c2.t0 + 2.6, 0.5), text: 'الصفيحة الكبيرة = الكاثود', anchor: lw(V(1.27, 5.0, 0)), dx: 330, dy: -60, color: '#93c5fd' });
-      labels.push({ id: 'post', a: a * ramp(t, B.c2.t0 + 3.8, 0.5), text: 'الصفيحة الصغيرة = الآنود', anchor: lw(V(-1.27, 3.0, 0)), dx: -330, dy: -30, color: '#fca5a5' });
+    if (id === 'c2') {
+      const a = ramp(t, B.c2.t0 + 1.0, 0.6) * (1 - ramp(t, B.c2.t1 - 0.3, 0.3));
+      labels.push({ id: 'flat', a, text: 'الجهة المسطّحة = الساق القصيرة', anchor: lw(V(2.4, 0.5, 0)), dx: 360, dy: 90, color: '#93c5fd' });
     }
     if (id === 'c6') {
-      const a = ramp(t, B.c6.t0 + 1.8, 0.6) * (1 - ramp(t, B.c6.t1 - 0.3, 0.3));
-      const names = [['أحمر = 2', -1.95, '#ff6b6b', -90, -140], ['أحمر = 2', -1.05, '#ff6b6b', -10, -200], ['بني = <bdi dir="ltr">×10</bdi>', -0.15, '#d08a50', 110, -140], ['ذهبي = <bdi dir="ltr">±5%</bdi>', 2.0, '#facc15', 200, 130]];
-      names.forEach(([tx, x, col, dx, dy], i) => labels.push({ id: 'band' + i, a: a * ramp(t, B.c6.t0 + 1.8 + i * 0.5, 0.5), text: tx, anchor: resBig.localToWorld(V(x, 1.25 * 1, 0)), dx, dy, color: col }));
-      hud.formula = ramp(t, B.c6.t0 + 3.5, 0.5) * (1 - ramp(t, B.c6.t1 - 0.3, 0.3));
-      formHTML = `<div class="hd">قراءة قيمة المقاومة</div><div class="eq">22 × 10 = 220 Ω</div><div class="row">أول لونين: <b>2</b> ثم <b>2</b> ← <b>22</b><br>اللون الثالث <b>بني</b> = <bdi dir="ltr">×10</bdi><br>الذهبي = دقة <b><bdi dir="ltr">±5%</bdi></b></div>`;
+      const a = ramp(t, B.c6.t0 + 1.2, 0.6) * (1 - ramp(t, B.c6.t1 - 0.3, 0.3));
+      const names = [['أحمر', -1.95, '#ff6b6b', -90, -140], ['أحمر', -1.05, '#ff6b6b', -10, -200], ['بني', -0.15, '#d08a50', 110, -140], ['ذهبي', 2.0, '#facc15', 200, 130]];
+      names.forEach(([tx, x, col, dx, dy], i) => labels.push({ id: 'band' + i, a: a * ramp(t, B.c6.t0 + 1.2 + i * 0.4, 0.5), text: tx, anchor: resBig.localToWorld(V(x, 1.25, 0)), dx, dy, color: col }));
+      hud.formula = ramp(t, B.c6.t0 + 2.4, 0.5) * (1 - ramp(t, B.c6.t1 - 0.3, 0.3));
+      formHTML = `<div class="bigemo">🛡️</div><div class="hd" style="text-align:center;font-size:40px">الحارس رقم 220</div><div class="row" style="text-align:center">خطوطه الملوّنة 🌈<br>أحمر · أحمر · بني · ذهبي</div>`;
     }
     if (['c3', 'c4', 'c5'].includes(id)) {
       hud.formula = ramp(t, B[id].t0 + 0.7, 0.5) * (1 - ramp(t, B[id].t1 - 0.3, 0.3));
-      const Rfig = id === 'c3' ? false : true;
       let body;
-      if (id === 'c3') body = `<div class="hd">بدون مقاومة</div><div class="eq" style="font-size:40px">5V → LED → GND</div><div class="row"><span class="bad">⚠ تيار كبير جداً!</span><br>قد يتلف الـ LED أو منفذ الأردوينو.</div>`;
-      if (id === 'c4') body = `<div class="hd">قانون أوم</div><div class="eq">I = <small>(</small>V<sub>s</sub> − V<sub>f</sub><small>)</small> ÷ R</div><div class="row"><bdi dir="ltr">V<sub>s</sub></bdi> = جهد المنفذ (5 فولت)<br><bdi dir="ltr">V<sub>f</sub></bdi> = جهد الـ LED (≈ 2 فولت للأحمر)<br><bdi dir="ltr">R</bdi> = المقاومة (220 أوم)</div>`;
-      if (id === 'c5') body = `<div class="hd">الحساب</div><div class="eq" style="font-size:46px">I = (5 − 2) ÷ 220</div><div class="eq" style="font-size:46px;margin-top:0">≈ 0.0136 A = <span style="color:#86efac">13.6 mA</span></div><div class="row"><span class="ok">✓ أقل من <bdi dir="ltr">20 mA</bdi></span> (الحد الموصى به لكل منفذ)</div>`;
-      formHTML = body + `<svg viewBox="0 0 640 170" id="sch">${schem(id)}</svg>`;
+      if (id === 'c3') body = `<div class="bigemo">😵⚡</div><div class="hd" style="color:#fca5a5;text-align:center;font-size:40px">كهرباء كثيرة جداً!</div>`;
+      if (id === 'c4') body = `<div class="bigemo">🛡️😌</div><div class="hd" style="text-align:center;font-size:40px">الحارس يجعل الكهرباء تمشي بهدوء</div>`;
+      if (id === 'c5') body = `<div class="bigemo">😊💡</div><div class="hd" style="color:#86efac;text-align:center;font-size:40px">مصباح سعيد وآمن</div>`;
+      formHTML = body + `<svg viewBox="0 0 640 150" id="sch">${schem(id)}</svg>`;
     }
   }
 
@@ -365,8 +380,8 @@ function update(t) {
       hiCol.material.opacity = 0.65 * inWin(t, K.hiCol[0], K.hiCol[1] + 0.2, 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
       hiRail.material.opacity = 0.65 * inWin(t, K.hiRail[0], K.hiRail[1], 0.35) * (0.75 + 0.25 * Math.sin(t * 6));
       const a1 = inWin(t, K.hiCol[0], K.hiCol[1] + 0.2, 0.35), a2 = inWin(t, K.hiRail[0], K.hiRail[1], 0.35);
-      labels.push({ id: 'col', a: a1, text: 'خمس فتحات متصلة ببعضها', anchor: holeW(10, 'c'), dx: -250, dy: -140, color: '#38bdf8' });
-      labels.push({ id: 'rail', a: a2, text: 'خط الطاقة: كل فتحاته متصلة', anchor: railW('nearMinus', 20), dx: 190, dy: 130, color: '#60a5fa' });
+      labels.push({ id: 'col', a: a1, text: 'خمس فتحات أصدقاء متصلون 🤝', anchor: holeW(10, 'c'), dx: -250, dy: -140, color: '#38bdf8' });
+      labels.push({ id: 'rail', a: a2, text: 'الطريق الأزرق: كل فتحاته متصلة', anchor: railW('nearMinus', 20), dx: 190, dy: 130, color: '#60a5fa' });
     }
     const O = [80, 125, 215];
     const keys = [
@@ -381,14 +396,13 @@ function update(t) {
     cam = camAt(keys, t);
     // step labels
     const lblOn = (b, d) => ramp(t, b.t0 + d, 0.5) * (1 - ramp(t, b.t1 - 0.3, 0.3));
-    if (id === 'd2') { labels.push({ id: 'gnd', a: lblOn(B.d2, 0.4), text: 'GND', anchor: pinW('GND_TOP').add(V(0, 12, 0)), dx: -100, dy: 100, color: '#cbd5e1' });
-      labels.push({ id: 'pin13', a: lblOn(B.d2, 0.4), text: 'المنفذ 13', anchor: pinW('D13').add(V(0, 12, 0)), dx: 150, dy: 120, color: '#94a3b8' });
-      labels.push({ id: 'minus', a: lblOn(B.d2, 2.4), text: 'الخط السالب (−)', anchor: railW('nearMinus', gndK).add(V(0, 1, 0)), dx: -200, dy: 90, color: '#60a5fa' }); }
+    if (id === 'd2') { labels.push({ id: 'gnd', a: lblOn(B.d2, 0.4), text: '🏠 بيت الكهرباء (GND)', anchor: pinW('GND_TOP').add(V(0, 12, 0)), dx: 170, dy: 125, color: '#cbd5e1' });
+      labels.push({ id: 'minus', a: lblOn(B.d2, 2.4), text: 'الطريق الأزرق (−)', anchor: railW('nearMinus', gndK).add(V(0, 1, 0)), dx: -230, dy: 60, color: '#60a5fa' }); }
     if (id === 'd3') { const ta = ramp(t, K.led[0] + 0.9, 0.5) * (1 - ramp(t, B.d3.t1 - 0.3, 0.3));
       labels.push({ id: 'anode', a: ta, text: 'الطويلة (+)', anchor: leds[0].localToWorld(V(-1.27, -2, 0)), dx: -120, dy: 100, color: '#fca5a5' });
       labels.push({ id: 'cath', a: ta, text: 'القصيرة (−)', anchor: leds[0].localToWorld(V(1.27, -2, 0)), dx: 110, dy: 120, color: '#93c5fd' }); }
     if (id === 'd4') { const a = ramp(t, K.res[0] + 0.9, 0.5) * (1 - ramp(t, B.d4.t1 - 0.3, 0.3));
-      labels.push({ id: 'r220', a, text: '220 Ω', anchor: ress[0].localToWorld(V(0, 1.4, 0)), dx: -30, dy: -110, color: '#fde68a' }); }
+      labels.push({ id: 'r220', a, text: '🛡️ حارس', anchor: ress[0].localToWorld(V(0, 1.4, 0)), dx: -30, dy: -110, color: '#fde68a' }); }
     if (id === 'd6') {
       UNITS.forEach((u, i) => labels.push({ id: 'p' + i, a: ramp(t, K.sig[i] + 0.1, 0.5) * (1 - ramp(t, B.d6.t1 - 0.3, 0.3)), text: `<span style="color:${u.css}">●</span> ${u.pinName}`, anchor: pinW(u.pin).add(V(0, 12, 0)), dx: (i - 1) * 6 + 0, dy: -70 - i * 6, color: u.css }));
     }
@@ -396,8 +410,8 @@ function update(t) {
     const di = { d1: 0, d2: 1, d3: 2, d4: 3, d5: 4, d6: 5 }[id];
     if (di !== undefined) { hud.stepper = ramp(t, B.d1.t0 + 0.6, 0.5); stepHTML = stepperHTML(di); }
     if (id === 'd7') { hud.stepper = 0; hud.card = ramp(t, B.d7.t0 + 0.8, 0.5);
-      cardHTML = `<div><span class="num">✓</span><h2>جدول التوصيل</h2></div><div style="margin-top:12px;font-size:28px;line-height:2;direction:rtl">` + UNITS.map(u =>
-        `<div><b style="color:${u.css}">● ${u.ar}</b>: <bdi dir="ltr">D${u.pinName} → 220Ω → LED → GND</bdi></div>`).join('') + `<div style="color:#94a3b8;margin-top:6px;font-size:24px">كل الأرضي (GND) مشتركة عبر الخط السالب.</div></div>`; }
+      cardHTML = `<div class="bigemo">🎉</div><div style="margin-top:6px;font-size:36px;line-height:1.9;direction:rtl">` + UNITS.map(u =>
+        `<div><span style="color:${u.css}">${EMO[u.key]}</span> <bdi dir="ltr">🧠${u.pinName} ➜ 🛡️ ➜ 💡 ➜ 🏠</bdi></div>`).join('') + `</div>`; }
   }
 
   if (sc.id === 'E') {
@@ -407,7 +421,7 @@ function update(t) {
     cam.p = V(5 + Math.sin(az) * 215, 140, 40 + Math.cos(az) * 215); cam.l = V(-88, 8, 40);
     const state = id === 'e4' ? 'R' : id === 'e5' ? 'G' : id === 'e6' ? 'Y' : null;
     setLeds(state);
-    hud.code = ramp(t, SC.E.t0 + 0.6, 0.6); setCodeHL(CODE_RANGES[id] || null);
+    hud.kid = ramp(t, SC.E.t0 + 0.6, 0.6) * (1 - ramp(t, SC.E.t1 - 0.5, 0.4)); kidHTMLs = id ? kidHTML(id, t) : undefined;
     ard.userData.setPower(1);
   }
 
@@ -419,12 +433,11 @@ function update(t) {
     const done = t > K.upload + 1.6;
     setLeds(done ? 'R' : null);
     const keys = [{ t: B.f1.t0, p: [-120, 150, 330], l: [-120, 10, 55], f: 38 }, { t: B.f1.t1 - 0.5, p: [-70, 130, 290], l: [-85, 8, 55], f: 38 },
-      { t: B.f2.t0 + 1.2, p: [22, 235, 560], l: [22, 8, 52], f: 38 }, { t: B.f4.t1, p: [22, 225, 545], l: [22, 8, 52], f: 38 }];
+      { t: B.f2.t0 + 1.2, p: [-40, 200, 470], l: [-40, 8, 52], f: 38 }, { t: B.f4.t1, p: [-40, 190, 455], l: [-40, 8, 52], f: 38 }];
     cam = camAt(keys, t);
-    if (id === 'f1') { labels.push({ id: 'usb', a: ramp(t, K.usbIn + 1.2, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'كابل USB', anchor: V(-100, 2, 90), dx: 0, dy: 110, color: '#94a3b8' });
-      labels.push({ id: 'on', a: ramp(t, K.powerOn + 0.5, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'لمبة ON', anchor: ard.localToWorld(V(...ledOnPos())), dx: 80, dy: -120, color: '#4ade80' }); }
-    hud.ide = ramp(t, B.f2.t0 + 0.3, 0.6);
-    ideUpdate(t, id);
+    if (id === 'f1') { labels.push({ id: 'usb', a: ramp(t, K.usbIn + 1.2, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'كابل USB 🔌', anchor: V(-100, 2, 90), dx: 0, dy: 110, color: '#94a3b8' });
+      labels.push({ id: 'on', a: ramp(t, K.powerOn + 0.5, 0.5) * (1 - ramp(t, B.f1.t1 - 0.3, 0.3)), text: 'لمبة صغيرة 💚', anchor: ard.localToWorld(V(...ledOnPos())), dx: 80, dy: -120, color: '#4ade80' }); }
+    const fi = { f1: 0, f2: 1, f3: 2, f4: 3 }[id]; if (fi !== undefined) { hud.stepper = ramp(t, B.f1.t0 + 0.8, 0.5); stepHTML = stepperHTML(t > K.upload + 0.3 ? 4 : fi, STEPS_F, 'نعلّم الدماغ') + (id === 'f4' && t > K.upload + 0.3 ? '<div style="font-size:34px;text-align:center;margin-top:8px">🎉 تعلّم الدماغ!</div>' : ''); }
   }
 
   if (sc.id === 'G' || sc.id === 'H') {
@@ -440,15 +453,18 @@ function update(t) {
     if (sc.id === 'G') {
       hud.pins = ramp(t, B.g1.t0 + 0.8, 0.5); hud.tl = hud.pins;
       const lc = (t < K.cycle0 ? 0 : t - K.cycle0); const loc = lc % 12;
-      pinsHTML = UNITS.map(u => { const on = (state === 'R' && u.key === 'red') || (state === 'G' && u.key === 'green') || (state === 'Y' && u.key === 'yellow');
-        return `<div class="chip ${on ? 'on' : ''}" style="color:${u.css}"><span class="dot"></span><span style="color:#e8eefc">D${u.pinName}</span><span class="st">${on ? 'HIGH' : 'LOW'}</span></div>`; }).join('');
-      const segs = [['#ef4444', 5, 'أحمر 5s'], ['#22c55e', 5, 'أخضر 5s'], ['#fbbf24', 2, 'أصفر 2s']];
-      tlHTML = `<div class="meta"><span>دورة الإشارة (12 ثانية)</span><span>${loc.toFixed(1)} s</span></div><div class="bar">` + segs.map(s => `<div class="seg" style="width:${s[1] / 12 * 100}%;background:${s[0]}">${s[2]}</div>`).join('') + `<div class="head" style="left:${(loc / 12 * 100).toFixed(2)}%"></div></div>`;
+      const kc = { R: ['🔴 قف', '#ef4444', 5], Y: ['🟡 استعد', '#fbbf24', 2], G: ['🟢 امشِ', '#22c55e', 5] };
+      pinsHTML = ['R', 'Y', 'G'].map(k => `<div class="chip ${state === k ? 'on' : ''}" style="color:${kc[k][1]}"><span class="dot"></span><span style="color:#fff">${kc[k][0]} · ${kc[k][2]}</span></div>`).join('');
+      hud.tl = 0; hud.road = hud.pins;
+      const ease = u => 1 - (1 - u) * (1 - u);
+      const carX = loc < 5 ? 40 : loc < 10 ? 40 + ((loc - 5) / 5) * 75 : -35 + 75 * ease((loc - 10) / 2);
+      const walking = loc < 5 && t >= K.cycle0;
+      roadHTML = `<div class="dash"></div><div class="zebra"></div><span style="left:${carX}%;transform:scaleX(-1)">🚗</span><span style="left:69.5%;top:${walking ? 8 + 6 * Math.sin(t * 9) : 12}px">${walking ? '🚶' : '🧍'}</span><span style="left:90%;font-size:58px;top:18px">${state === 'R' ? '🔴' : state === 'G' ? '🟢' : '🟡'}</span>`;
     }
     if (sc.id === 'H') {
       hud.tips = 1; const tips = ['h1', 'h2', 'h3'];
       tipsHTML = tips.map((k, i) => { const a = ramp(t, B[k].t0 + 0.2, 0.5);
-        const txt = ['إذا لم يضئ الـ LED فاعكس اتجاهه، ولا تستخدمه بدون مقاومة.', 'تأكد من وصل GND، وافصل USB قبل تعديل التوصيلات.', 'طوّر المشروع: زر مشاة، أو إشارة ثانية لتقاطع كامل.'][i];
+        const txt = ['🔄 إذا لم يضئ المصباح: اقلبه!', '👨‍👩‍👧 اطلب مساعدة شخص كبير', '🎈 غيّر الأرقام وانظر ماذا يحدث!'][i];
         return `<div class="tip panel" style="opacity:${a};transform:translateY(${(1 - a) * 18}px)"><i>${i + 1}</i><span>${txt}</span></div>`; }).join('');
       hud.outro = ramp(t, B.h4.t0 + 0.2, 0.9); if (hud.outro > 0) { hud.tips = 1 - hud.outro; hud.title = Math.min(hud.title, 1 - hud.outro); }
     }
@@ -463,7 +479,7 @@ function update(t) {
   setHUD($('card'), hud.card, cardHTML);
   setHUD($('stepper'), hud.stepper, stepHTML);
   setHUD($('formula'), hud.formula, formHTML); if (hud.formula > 0.01) schemAnim(t, id);
-  setHUD($('code'), hud.code); setHUD($('ide'), hud.ide);
+  setHUD($('code'), hud.code); setHUD($('ide'), hud.ide); setHUD($('kid'), hud.kid, kidHTMLs); setHUD($('road'), hud.road, roadHTML);
   setHUD($('pins'), hud.pins, pinsHTML); setHUD($('tl'), hud.tl, tlHTML);
   setHUD($('tips'), hud.tips, tipsHTML); setHUD($('outro'), hud.outro);
   // caption
@@ -478,24 +494,20 @@ function update(t) {
 // ------------------------------------------------------------------ schematic svg (c3..c5)
 function schem(id) {
   const res = id !== 'c3';
-  const line = (x1, x2) => `<line x1="${x1}" y1="70" x2="${x2}" y2="70" stroke="#94a3b8" stroke-width="4"/>`;
-  let s = `<text x="10" y="40" fill="#e8eefc" font-size="26" font-weight="700">D10 · 5V</text>` + line(14, res ? 190 : 410);
+  const line = (x1, x2) => `<line x1="${x1}" y1="75" x2="${x2}" y2="75" stroke="#94a3b8" stroke-width="6" stroke-linecap="round"/>`;
+  let s = `<text x="0" y="95" font-size="60">🧠</text>` + line(80, res ? 200 : 470);
   if (res) {
-    s += `<polyline points="190,70 205,70 215,46 235,94 255,46 275,94 295,46 305,70 320,70" fill="none" stroke="#fde68a" stroke-width="5" stroke-linejoin="round"/>` + `<text x="212" y="124" fill="#fde68a" font-size="24" font-weight="700">220 Ω</text>`;
-    s += line(320, 410);
+    s += `<polyline points="200,75 215,75 225,45 245,105 265,45 285,105 305,45 315,75 330,75" fill="none" stroke="#fde68a" stroke-width="7" stroke-linejoin="round"/><text x="238" y="145" font-size="44">🛡️</text>` + line(330, 470);
   }
-  s += `<polygon points="410,44 410,96 452,70" fill="none" stroke="${id === 'c3' ? '#ef4444' : '#ff5555'}" stroke-width="5" stroke-linejoin="round"/><line x1="452" y1="44" x2="452" y2="96" stroke="#ff5555" stroke-width="5"/>`;
-  s += `<path d="M430,34 l14,-14 m-6,-4 l10,-10" stroke="#ff9a9a" stroke-width="3" fill="none"/>`;
-  s += line(452, 560) + `<line x1="560" y1="70" x2="560" y2="110" stroke="#94a3b8" stroke-width="4"/><line x1="536" y1="110" x2="584" y2="110" stroke="#94a3b8" stroke-width="4"/><line x1="544" y1="122" x2="576" y2="122" stroke="#94a3b8" stroke-width="4"/><line x1="552" y1="134" x2="568" y2="134" stroke="#94a3b8" stroke-width="4"/>`;
-  s += `<text x="520" y="160" fill="#94a3b8" font-size="22">GND</text>`;
-  for (let i = 0; i < 7; i++) s += `<circle class="dotc" data-i="${i}" r="7" fill="${id === 'c3' ? '#ef4444' : '#38bdf8'}"/>`;
+  s += `<text x="470" y="95" font-size="64">💡</text>` + line(545, 570) + `<text x="568" y="95" font-size="60">🏠</text>`;
+  for (let i = 0; i < 8; i++) s += `<circle class="dotc" data-i="${i}" r="9" fill="${id === 'c3' ? '#ef4444' : '#38bdf8'}"/>`;
   return s;
 }
 function schemAnim(t, id) {
   const dots = $('formula').querySelectorAll('.dotc'); if (!dots.length) return;
-  const res = id !== 'c3'; const x0 = 14, x1 = 560; const sp = id === 'c3' ? 0.9 : 0.35;
-  dots.forEach((d, i) => { let u = ((t * sp + i / dots.length) % 1); const x = x0 + u * (x1 - x0); d.setAttribute('cx', x); d.setAttribute('cy', 70);
-    if (res && x > 205 && x < 305) { const k = (x - 205) / 100; d.setAttribute('cy', 70 + (Math.sin(k * Math.PI * 4) * 24)); } });
+  const res = id !== 'c3'; const x0 = 80, x1 = 560; const sp = id === 'c3' ? 1.0 : 0.22;
+  dots.forEach((d, i) => { const u = ((t * sp + i / dots.length) % 1); const x = x0 + u * (x1 - x0); d.setAttribute('cx', x); d.setAttribute('cy', 75);
+    if (res && x > 200 && x < 330) { const k = (x - 200) / 130; d.setAttribute('cy', 75 + (Math.sin(k * Math.PI * 4) * 30)); } });
 }
 function ledOnPos() { return [(1260 * 0.0254) - M.UNO.W / 2, 1.5, M.UNO.D / 2 - 1620 * 0.0254]; }
 

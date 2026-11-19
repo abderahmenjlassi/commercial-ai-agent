@@ -49,12 +49,12 @@ def bass(f, d):
     return (np.sin(2 * np.pi * f * t) + 0.25 * np.sin(2 * np.pi * 2 * f * t)) * env * 0.5
 
 # ------------------------------------------------------------ music
-BPM = 112
+BPM = 104
 beat = 60 / BPM
 bar = 4 * beat
 # Am - F - C - G, two bars each
-prog = [([57, 60, 64], 45), ([53, 57, 60], 41), ([48, 52, 55], 36), ([55, 59, 62], 43)]
-arp_pat = [0, 1, 2, 1, 2, 1, 0, 1]   # eighth-note pattern over chord tones
+prog = [([60, 64, 67], 48), ([55, 59, 62], 43), ([57, 60, 64], 45), ([53, 57, 60], 41)]  # C - G - Am - F (happy)
+arp_pat = [0, 1, 2, 1, 2, 1, 0, 2]   # eighth-note pattern over chord tones
 nbars = int(TOTAL / bar) + 2
 for b in range(0, nbars, 2):
     chord, root = prog[(b // 2) % 4]

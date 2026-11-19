@@ -187,6 +187,9 @@ export function makeArduino() {
   const onMat = new THREE.MeshStandardMaterial({ color: 0x143a22, emissive: 0x2dff6b, emissiveIntensity: 0, roughness: 0.3 });
   const onLed = box(2.2, 0.8, 1.3, onMat, milX(1260), 0.5, milZ(1620)); g.add(onLed);
   const onGlow = makeGlow(0x4dff8a, 5); onGlow.position.set(milX(1260), 2, milZ(1620)); g.add(onGlow);
+  // cartoon eyes for the little "brain"
+  const eyeW = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 }), eyeB = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 });
+  for (const x of [6, 19.5]) { g.add(mesh(new THREE.SphereGeometry(4.4, 24, 16), eyeW, x, 4.4, -12.5)); g.add(mesh(new THREE.SphereGeometry(2.1, 16, 12), eyeB, x + 0.5, 5.3, -8.7)); }
   g.userData.setPower = a => { onMat.emissiveIntensity = 3 * a; onGlow.material.opacity = 0.5 * a; };
   g.userData.usbOpening = new THREE.Vector3(milX(0) - 6 + 8.2 - 8.2, 5.45, usbZ);
   g.traverse(o => { if (o.isMesh && o.material !== MAT.hole) { o.castShadow = true; o.receiveShadow = true; } });
@@ -401,7 +404,7 @@ export function makeTrafficLight() {
   }
   g.userData.lamps = lamps;
   g.userData.set = (state) => { for (const k of ['R', 'Y', 'G']) { const on = state === k ? 1 : 0; const L = lamps[k];
-    L.m.emissiveIntensity = 0.62 * on; L.glow.material.opacity = 0.55 * on; L.light.intensity = 2500 * on; L.m.color.set(L.c).multiplyScalar(on ? 0.55 : 0.22); } };
+    L.m.emissiveIntensity = 0.42 * on; L.glow.material.opacity = 0.4 * on; L.light.intensity = 2500 * on; L.m.color.set(L.c).multiplyScalar(on ? 0.55 : 0.22); } };
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
