@@ -27,7 +27,7 @@ lo = np.clip(np.arange(N) - k // 2, 0, N); hi = np.clip(np.arange(N) + k // 2, 0
 act = np.clip(((cs[hi] - cs[lo]) / np.maximum(hi - lo, 1)) * 40, 0, 1)
 k2 = int(0.35 * SR); cs2 = np.cumsum(np.concatenate([[0.0], act]))
 lo2 = np.clip(np.arange(N) - k2 // 2, 0, N); hi2 = np.clip(np.arange(N) + k2 // 2, 0, N)
-duck = 1 - 0.55 * np.clip((cs2[hi2] - cs2[lo2]) / np.maximum(hi2 - lo2, 1), 0, 1)
+duck = 1 - 0.66 * np.clip((cs2[hi2] - cs2[lo2]) / np.maximum(hi2 - lo2, 1), 0, 1)
 L = np.zeros(N, dtype=np.float64)
 R = np.zeros(N, dtype=np.float64)
 

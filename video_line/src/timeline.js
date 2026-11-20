@@ -14,30 +14,31 @@ export const SCENES = [
 ];
 // [scene, id, internal seconds, video seconds, caption]
 const BEATS = [
-  ['A', 'a1', 7, 2.4, '🤖 Robot suiveur de ligne'],
+  ['A', 'a1', 7, 2.4, '🤖 Un robot qui suit une ligne noire'],
   // --- showcase: quick
-  ['B', 'b0', 3, 0.6, '🧰 Les composants'], ['B', 'b1', 4, 0.8, '🧠 Arduino Uno'], ['B', 'b2', 4, 0.8, '⚙️ Driver moteur L298N'],
-  ['B', 'b3', 4, 0.9, '👁️ 2 capteurs IR (TCRT5000)'], ['B', 'b4', 4, 0.8, '🛞 2 moteurs + roues'], ['B', 'b5', 4, 0.8, '🔩 Châssis + roue folle'], ['B', 'b6', 4, 0.8, '🔋 Batterie 7,4 V (2×18650)'],
+  ['B', 'b0', 3, 0.6, '🧰 Ce qu’il faut'], ['B', 'b1', 4, 0.8, '🧠 Arduino : le cerveau'], ['B', 'b2', 4, 0.8, '⚙️ L298N : les muscles'],
+  ['B', 'b3', 4, 0.9, '👁️ 2 capteurs : les yeux'], ['B', 'b4', 4, 0.8, '🛞 2 moteurs + roues'], ['B', 'b5', 4, 0.8, '🔩 Le châssis'], ['B', 'b6', 4, 0.8, '🔋 La batterie'],
   // --- explanation: needs time
-  ['C', 'c1', 10, 4.6, 'Capteur IR : le blanc réfléchit (0), le noir absorbe (1)'],
-  ['C', 'c2', 8, 3.8, 'Broche Arduino : 20 mA max. Moteur : 200 mA et plus → il faut un driver'],
-  ['C', 'c3', 9, 3.8, 'Pont en H : IN1/IN2 = sens · ENA = vitesse'],
-  ['C', 'c4', 7, 3.0, 'PWM : analogWrite(0 à 255) règle la puissance'],
+  ['C', 'c1', 10, 4.6, 'Lumière qui revient = blanc (0) · pas de retour = noir (1)'],
+  ['C', 'c2', 8, 3.8, 'Arduino = peu de puissance · moteur = beaucoup → on ajoute le L298N'],
+  ['C', 'c3', 9, 3.8, 'Le L298N choisit le sens et la vitesse'],
+  ['C', 'c4', 7, 3.0, 'Impulsions rapides = pédale d’accélérateur (PWM)'],
   // --- build: procedural, wiring steps take longer
-  ['D', 'd1', 6, 1.5, 'Châssis, moteurs, roues, roue folle'], ['D', 'd2', 6, 1.6, 'Capteurs à l\'avant, ~1 cm du sol'],
-  ['D', 'd3', 6, 1.5, 'Arduino, L298N, batterie, mini-breadboard'], ['D', 'd4', 6, 2.0, 'Moteurs → sorties OUT1 à OUT4'],
-  ['D', 'd5', 8, 2.6, 'Capteurs : VCC, GND, OUT (D2 et D3)'], ['D', 'd6', 10, 3.4, 'L298N : IN1–IN4 → D6 D7 D8 D9 · ENA → D5 · ENB → D10'],
-  ['D', 'd7', 11, 3.8, 'Batterie → 12V/GND · 5V du L298N → Arduino · GND commun !'], ['D', 'd8', 5, 2.0, 'Retire les cavaliers ENA et ENB (sinon pas de PWM)'],
-  ['D', 'd9', 3, 0.8, '✅ Prêt !'],
+  ['D', 'd1', 6, 1.5, 'Moteurs et roues sur le châssis'], ['D', 'd2', 6, 1.6, 'Capteurs devant, près du sol'],
+  ['D', 'd3', 6, 1.5, 'Arduino, L298N, batterie'], ['D', 'd4', 6, 2.0, 'Moteurs → sorties du L298N'],
+  ['D', 'd5', 8, 2.6, 'Capteurs : 5V, GND et signal (D2, D3)'], ['D', 'd6', 10, 3.4, 'Fils de commande → D5 à D10'],
+  ['D', 'd7', 11, 3.8, 'Batterie → L298N · masse commune'], ['D', 'd8', 5, 2.0, 'Retire les 2 petits cavaliers'],
+  ['D', 'd9', 3, 0.8, '✅ Le robot est monté !'],
   // --- code: explanation + simulation
-  ['E', 'e0', 8, 3.6, 'drive(g, d) : vitesse de −255 à 255 pour chaque moteur'], ['E', 'e1', 7, 3.0, 'Capteur : 1 = ligne noire, 0 = sol blanc'],
-  ['E', 'e2', 6, 2.4, '0 · 0 → tout droit'], ['E', 'e3', 7, 3.2, '1 · 0 → la ligne est à gauche : on tourne à gauche'],
-  ['E', 'e4', 6, 2.4, '0 · 1 → on tourne à droite'], ['E', 'e5', 5, 2.0, '1 · 1 → stop'],
-  ['E', 'e6', 10, 3.8, 'loop() recommence des centaines de fois par seconde ⟳'],
-  ['F', 'f1', 6, 1.6, '🔌 USB · carte Arduino Uno · bon port'], ['F', 'f2', 6, 1.6, '➡️ Téléverser'],
+  ['E', 'e0', 8, 3.6, 'Chaque moteur reçoit un nombre : + avant, − arrière'], ['E', 'e1', 7, 3.0, '1 = noir · 0 = blanc'],
+  ['E', 'e2', 6, 2.4, '0 · 0 → tout droit'], ['E', 'e3', 7, 3.2, '1 · 0 → à gauche'],
+  ['E', 'e4', 6, 2.4, '0 · 1 → à droite'], ['E', 'e5', 5, 2.0, '1 · 1 → stop'],
+  ['E', 'e6', 10, 3.8, 'Ça se répète des centaines de fois par seconde'],
+  ['F', 'f1', 6, 1.6, 'USB + carte Arduino Uno + port'], ['F', 'f2', 6, 1.6, '➡️ Téléverser'],
   ['G', 'g1', 10.5, 10.5, 'Il suit la ligne !'], ['G', 'g2', 3, 2.4, '🛑 Barre noire : stop'],
-  ['H', 'h1', 4, 2.8, 'Idées : 3ᵉ capteur, vitesse variable, régulation PID'], ['H', 'h2', 3, 2.0, '🌟 Bravo, ingénieur !'],
+  ['H', 'h1', 4, 2.8, 'Idée : ajoute un 3ᵉ capteur'], ['H', 'h2', 3, 2.0, '🌟 Bravo, jeunes ingénieurs !'],
 ];
+export const BEATS0 = BEATS;
 const LEAD = 0.7, TAIL = 0.7, GAP = 0.2;
 export const B = {}, SC = {}; export const beats = []; let t = 0;
 for (const s of SCENES) {

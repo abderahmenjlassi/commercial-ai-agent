@@ -22,14 +22,14 @@ def phonemes(text):
         if r: out.append(r.decode('utf-8'))
     return ' '.join(out)
 
-def synth(text, length_scale=None):
+def synth(text, length_scale=None, noise_scale=None, noise_w=None):
     ph = phonemes(text)
     ids = [1, 0]
     for ch in ph:
         if ch in idmap: ids += [idmap[ch][0], 0]
     ids.append(2)
     x = np.array([ids], dtype=np.int64)
-    sc = np.array([inf['noise_scale'], length_scale or inf['length_scale'], inf['noise_w']], dtype=np.float32)
+    sc = np.array([noise_scale or inf['noise_scale'], length_scale or inf['length_scale'], noise_w or inf['noise_w']], dtype=np.float32)
     y = sess.run(None, {'input': x, 'input_lengths': np.array([x.shape[1]], dtype=np.int64), 'scales': sc})[0]
     return y.squeeze().astype(np.float32), ph
 

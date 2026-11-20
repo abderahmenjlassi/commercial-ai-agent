@@ -6,3 +6,7 @@ out/beats.json
 out/events.json
 out/voice.json
 out/voice/
+frames_*
+out/voice/
+out/*.json
+out/audio.wav
