@@ -1,0 +1,129 @@
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/947 [00:00<?, ?it/s]Loading weights:   1%|          | 6/947 [00:00<00:24, 37.97it/s]Loading weights:   1%|          | 10/947 [00:00<00:40, 22.92it/s]Loading weights:   1%|▏         | 13/947 [00:00<00:59, 15.62it/s]Loading weights:   2%|▏         | 15/947 [00:01<02:17,  6.80it/s]Loading weights:   2%|▏         | 18/947 [00:01<01:59,  7.77it/s]Loading weights:   2%|▏         | 23/947 [00:01<01:13, 12.54it/s]Loading weights:   3%|▎         | 26/947 [00:02<01:09, 13.27it/s]Loading weights:   3%|▎         | 32/947 [00:02<00:47, 19.37it/s]Loading weights:   4%|▍         | 36/947 [00:02<01:07, 13.55it/s]Loading weights:   4%|▍         | 39/947 [00:03<01:19, 11.46it/s]Loading weights:   4%|▍         | 41/947 [00:03<01:14, 12.14it/s]Loading weights:   5%|▍         | 43/947 [00:03<01:13, 12.34it/s]Loading weights:   5%|▌         | 48/947 [00:03<00:59, 15.06it/s]Loading weights:   5%|▌         | 50/947 [00:03<01:09, 12.95it/s]Loading weights:   6%|▌         | 57/947 [00:04<00:51, 17.32it/s]Loading weights:   7%|▋         | 69/947 [00:04<00:31, 28.15it/s]Loading weights:   8%|▊         | 74/947 [00:04<00:33, 26.11it/s]Loading weights:   9%|▊         | 81/947 [00:04<00:32, 26.83it/s]Loading weights:   9%|▉         | 85/947 [00:05<00:35, 23.96it/s]Loading weights:   9%|▉         | 88/947 [00:05<00:42, 20.37it/s]Loading weights:  10%|▉         | 93/947 [00:05<00:55, 15.26it/s]Loading weights:  10%|█         | 96/947 [00:05<00:50, 16.84it/s]Loading weights:  10%|█         | 99/947 [00:06<00:56, 14.96it/s]Loading weights:  11%|█         | 103/947 [00:06<00:52, 15.98it/s]Loading weights:  11%|█         | 105/947 [00:06<01:07, 12.42it/s]Loading weights:  11%|█▏        | 107/947 [00:06<01:04, 13.03it/s]Loading weights:  12%|█▏        | 112/947 [00:07<01:01, 13.62it/s]Loading weights:  12%|█▏        | 115/947 [00:07<01:04, 12.99it/s]Loading weights:  13%|█▎        | 119/947 [00:07<01:09, 11.91it/s]Loading weights:  13%|█▎        | 121/947 [00:08<01:28,  9.33it/s]Loading weights:  13%|█▎        | 123/947 [00:08<01:35,  8.61it/s]Loading weights:  13%|█▎        | 126/947 [00:08<01:27,  9.39it/s]Loading weights:  14%|█▍        | 134/947 [00:09<01:01, 13.31it/s]Loading weights:  14%|█▍        | 136/947 [00:09<00:58, 13.84it/s]Loading weights:  15%|█▍        | 138/947 [00:09<00:55, 14.66it/s]Loading weights:  15%|█▍        | 142/947 [00:09<00:48, 16.61it/s]Loading weights:  16%|█▌        | 147/947 [00:09<00:41, 19.23it/s]Loading weights:  16%|█▌        | 150/947 [00:09<00:39, 20.01it/s]Loading weights:  16%|█▌        | 153/947 [00:10<00:44, 17.70it/s]Loading weights:  16%|█▋        | 155/947 [00:10<01:01, 12.84it/s]Loading weights:  17%|█▋        | 158/947 [00:10<00:57, 13.61it/s]Loading weights:  17%|█▋        | 162/947 [00:10<00:48, 16.08it/s]Loading weights:  17%|█▋        | 164/947 [00:11<00:53, 14.55it/s]Loading weights:  18%|█▊        | 166/947 [00:11<01:10, 11.11it/s]Loading weights:  18%|█▊        | 169/947 [00:11<01:04, 12.02it/s]Loading weights:  18%|█▊        | 175/947 [00:11<00:40, 19.17it/s]Loading weights:  19%|█▉        | 179/947 [00:11<00:45, 17.07it/s]Loading weights:  20%|█▉        | 185/947 [00:12<00:46, 16.24it/s]Loading weights:  20%|█▉        | 188/947 [00:12<00:46, 16.44it/s]Loading weights:  20%|██        | 190/947 [00:12<00:44, 16.86it/s]Loading weights:  20%|██        | 192/947 [00:12<00:57, 13.16it/s]Loading weights:  21%|██        | 198/947 [00:13<00:42, 17.73it/s]Loading weights:  21%|██        | 200/947 [00:13<00:46, 16.02it/s]Loading weights:  22%|██▏       | 204/947 [00:13<00:52, 14.22it/s]Loading weights:  22%|██▏       | 208/947 [00:13<00:53, 13.85it/s]Loading weights:  22%|██▏       | 211/947 [00:14<00:56, 13.08it/s]Loading weights:  22%|██▏       | 213/947 [00:14<00:56, 13.10it/s]Loading weights:  23%|██▎       | 215/947 [00:14<01:04, 11.31it/s]Loading weights:  23%|██▎       | 217/947 [00:14<01:08, 10.64it/s]Loading weights:  24%|██▎       | 224/947 [00:15<00:43, 16.61it/s]Loading weights:  24%|██▍       | 227/947 [00:15<01:00, 11.90it/s]Loading weights:  24%|██▍       | 230/947 [00:15<00:52, 13.70it/s]Loading weights:  25%|██▍       | 235/947 [00:15<00:46, 15.25it/s]Loading weights:  25%|██▌       | 238/947 [00:16<00:42, 16.53it/s]Loading weights:  26%|██▌       | 242/947 [00:16<00:35, 20.04it/s]Loading weights:  26%|██▌       | 245/947 [00:16<00:34, 20.22it/s]Loading weights:  26%|██▌       | 248/947 [00:16<00:56, 12.37it/s]Loading weights:  27%|██▋       | 251/947 [00:17<01:12,  9.60it/s]Loading weights:  27%|██▋       | 256/947 [00:17<01:01, 11.19it/s]Loading weights:  27%|██▋       | 258/947 [00:17<00:57, 11.94it/s]Loading weights:  28%|██▊       | 262/947 [00:17<00:44, 15.48it/s]Loading weights:  28%|██▊       | 267/947 [00:18<00:37, 18.13it/s]Loading weights:  29%|██▉       | 277/947 [00:18<00:24, 26.81it/s]Loading weights:  30%|██▉       | 284/947 [00:18<00:23, 28.66it/s]Loading weights:  30%|███       | 288/947 [00:18<00:25, 26.01it/s]Loading weights:  31%|███       | 291/947 [00:19<00:33, 19.85it/s]Loading weights:  31%|███       | 294/947 [00:19<00:49, 13.20it/s]Loading weights:  31%|███▏      | 296/947 [00:19<00:57, 11.31it/s]Loading weights:  31%|███▏      | 298/947 [00:19<00:52, 12.35it/s]Loading weights:  32%|███▏      | 302/947 [00:20<00:53, 11.98it/s]Loading weights:  33%|███▎      | 309/947 [00:20<00:40, 15.56it/s]Loading weights:  33%|███▎      | 317/947 [00:20<00:29, 21.17it/s]Loading weights:  34%|███▍      | 320/947 [00:21<00:33, 18.54it/s]Loading weights:  34%|███▍      | 323/947 [00:21<00:36, 17.17it/s]Loading weights:  35%|███▍      | 329/947 [00:21<00:35, 17.33it/s]Loading weights:  35%|███▍      | 331/947 [00:21<00:41, 14.93it/s]Loading weights:  35%|███▌      | 336/947 [00:22<00:35, 17.14it/s]Loading weights:  36%|███▌      | 339/947 [00:22<00:38, 15.98it/s]Loading weights:  36%|███▌      | 343/947 [00:22<00:46, 13.07it/s]Loading weights:  37%|███▋      | 347/947 [00:22<00:42, 14.12it/s]Loading weights:  37%|███▋      | 355/947 [00:23<00:32, 18.27it/s]Loading weights:  38%|███▊      | 363/947 [00:23<00:24, 24.12it/s]Loading weights:  39%|███▊      | 366/947 [00:23<00:24, 23.30it/s]Loading weights:  39%|███▉      | 369/947 [00:23<00:27, 20.69it/s]Loading weights:  39%|███▉      | 372/947 [00:23<00:28, 20.22it/s]Loading weights:  40%|███▉      | 376/947 [00:24<00:24, 22.90it/s]Loading weights:  40%|████      | 382/947 [00:24<00:20, 27.75it/s]Loading weights:  41%|████      | 390/947 [00:24<00:16, 33.35it/s]Loading weights:  42%|████▏     | 394/947 [00:24<00:31, 17.42it/s]Loading weights:  42%|████▏     | 398/947 [00:25<00:32, 17.13it/s]Loading weights:  42%|████▏     | 401/947 [00:25<00:37, 14.51it/s]Loading weights:  43%|████▎     | 403/947 [00:25<00:46, 11.72it/s]Loading weights:  43%|████▎     | 409/947 [00:26<00:39, 13.60it/s]Loading weights:  43%|████▎     | 411/947 [00:26<00:43, 12.21it/s]Loading weights:  44%|████▍     | 417/947 [00:26<00:30, 17.63it/s]Loading weights:  44%|████▍     | 420/947 [00:26<00:33, 15.73it/s]Loading weights:  45%|████▍     | 423/947 [00:27<00:47, 10.96it/s]Loading weights:  45%|████▌     | 427/947 [00:27<00:40, 12.88it/s]Loading weights:  46%|████▌     | 432/947 [00:27<00:41, 12.31it/s]Loading weights:  47%|████▋     | 443/947 [00:28<00:25, 20.06it/s]Loading weights:  47%|████▋     | 447/947 [00:28<00:22, 21.77it/s]Loading weights:  48%|████▊     | 450/947 [00:28<00:23, 20.72it/s]Loading weights:  48%|████▊     | 453/947 [00:28<00:30, 16.32it/s]Loading weights:  48%|████▊     | 455/947 [00:29<00:32, 15.32it/s]Loading weights:  48%|████▊     | 457/947 [00:29<00:32, 14.91it/s]Loading weights:  48%|████▊     | 459/947 [00:29<00:31, 15.68it/s]Loading weights:  49%|████▉     | 464/947 [00:29<00:21, 22.12it/s]Loading weights:  49%|████▉     | 467/947 [00:29<00:29, 16.01it/s]Loading weights:  50%|████▉     | 470/947 [00:30<00:40, 11.71it/s]Loading weights:  50%|████▉     | 473/947 [00:30<00:48,  9.86it/s]Loading weights:  51%|█████     | 481/947 [00:30<00:32, 14.37it/s]Loading weights:  51%|█████     | 483/947 [00:31<00:32, 14.48it/s]Loading weights:  52%|█████▏    | 488/947 [00:31<00:25, 17.83it/s]Loading weights:  52%|█████▏    | 491/947 [00:31<00:29, 15.70it/s]Loading weights:  52%|█████▏    | 493/947 [00:31<00:34, 13.15it/s]Loading weights:  52%|█████▏    | 495/947 [00:32<00:53,  8.44it/s]Loading weights:  52%|█████▏    | 497/947 [00:32<01:15,  5.94it/s]Loading weights:  53%|█████▎    | 498/947 [00:33<01:25,  5.24it/s]Loading weights:  53%|█████▎    | 504/947 [00:33<00:49,  8.99it/s]Loading weights:  53%|█████▎    | 506/947 [00:33<00:43, 10.09it/s]Loading weights:  54%|█████▎    | 508/947 [00:33<00:43, 10.13it/s]Loading weights:  54%|█████▍    | 510/947 [00:34<00:44,  9.93it/s]Loading weights:  54%|█████▍    | 512/947 [00:34<00:42, 10.35it/s]Loading weights:  55%|█████▍    | 517/947 [00:34<00:35, 12.21it/s]Loading weights:  55%|█████▍    | 519/947 [00:34<00:34, 12.57it/s]Loading weights:  55%|█████▌    | 521/947 [00:34<00:36, 11.58it/s]Loading weights:  55%|█████▌    | 523/947 [00:35<00:34, 12.42it/s]Loading weights:  56%|█████▌    | 527/947 [00:35<00:31, 13.23it/s]Loading weights:  56%|█████▌    | 531/947 [00:35<00:29, 14.01it/s]Loading weights:  56%|█████▋    | 533/947 [00:35<00:34, 11.96it/s]Loading weights:  57%|█████▋    | 536/947 [00:35<00:28, 14.41it/s]Loading weights:  57%|█████▋    | 538/947 [00:36<00:29, 13.71it/s]Loading weights:  58%|█████▊    | 548/947 [00:36<00:21, 18.78it/s]Loading weights:  58%|█████▊    | 551/947 [00:36<00:19, 20.06it/s]Loading weights:  59%|█████▊    | 554/947 [00:36<00:20, 19.29it/s]Loading weights:  59%|█████▉    | 557/947 [00:36<00:18, 20.93it/s]Loading weights:  59%|█████▉    | 560/947 [00:37<00:19, 19.84it/s]Loading weights:  59%|█████▉    | 563/947 [00:37<00:21, 18.17it/s]Loading weights:  60%|█████▉    | 566/947 [00:37<00:25, 15.17it/s]Loading weights:  60%|██████    | 570/947 [00:37<00:28, 13.24it/s]Loading weights:  61%|██████    | 575/947 [00:38<00:21, 17.28it/s]Loading weights:  61%|██████    | 580/947 [00:38<00:16, 21.75it/s]Loading weights:  62%|██████▏   | 583/947 [00:38<00:15, 22.75it/s]Loading weights:  62%|██████▏   | 587/947 [00:38<00:15, 22.70it/s]Loading weights:  62%|██████▏   | 590/947 [00:38<00:17, 20.84it/s]Loading weights:  63%|██████▎   | 593/947 [00:39<00:23, 15.15it/s]Loading weights:  63%|██████▎   | 597/947 [00:39<00:23, 14.61it/s]Loading weights:  63%|██████▎   | 599/947 [00:39<00:26, 13.19it/s]Loading weights:  64%|██████▍   | 607/947 [00:39<00:17, 19.61it/s]Loading weights:  65%|██████▍   | 611/947 [00:40<00:30, 11.05it/s]Loading weights:  65%|██████▌   | 619/947 [00:40<00:23, 13.80it/s]Loading weights:  66%|██████▌   | 624/947 [00:41<00:21, 14.77it/s]Loading weights:  67%|██████▋   | 632/947 [00:41<00:16, 19.03it/s]Loading weights:  67%|██████▋   | 637/947 [00:41<00:18, 17.03it/s]Loading weights:  68%|██████▊   | 642/947 [00:42<00:20, 14.95it/s]Loading weights:  68%|██████▊   | 648/947 [00:42<00:17, 16.73it/s]Loading weights:  69%|██████▊   | 650/947 [00:42<00:18, 16.10it/s]Loading weights:  69%|██████▉   | 652/947 [00:43<00:22, 13.22it/s]Loading weights:  69%|██████▉   | 655/947 [00:43<00:21, 13.90it/s]Loading weights:  69%|██████▉   | 658/947 [00:43<00:22, 12.63it/s]Loading weights:  70%|███████   | 664/947 [00:43<00:18, 15.47it/s]Loading weights:  71%|███████   | 670/947 [00:44<00:16, 17.22it/s]Loading weights:  71%|███████▏  | 675/947 [00:44<00:13, 20.37it/s]Loading weights:  72%|███████▏  | 680/947 [00:44<00:13, 19.36it/s]Loading weights:  72%|███████▏  | 684/947 [00:44<00:12, 20.32it/s]Loading weights:  73%|███████▎  | 687/947 [00:44<00:14, 18.50it/s]Loading weights:  73%|███████▎  | 691/947 [00:45<00:16, 15.84it/s]Loading weights:  73%|███████▎  | 693/947 [00:45<00:18, 13.77it/s]Loading weights:  73%|███████▎  | 695/947 [00:45<00:18, 13.48it/s]Loading weights:  74%|███████▎  | 697/947 [00:45<00:17, 14.51it/s]Loading weights:  74%|███████▍  | 699/947 [00:46<00:21, 11.52it/s]Loading weights:  74%|███████▍  | 704/947 [00:46<00:19, 12.33it/s]Loading weights:  75%|███████▍  | 709/947 [00:46<00:13, 17.28it/s]Loading weights:  75%|███████▌  | 712/947 [00:46<00:12, 19.21it/s]Loading weights:  76%|███████▌  | 716/947 [00:46<00:11, 19.44it/s]Loading weights:  76%|███████▌  | 719/947 [00:46<00:11, 19.76it/s]Loading weights:  76%|███████▋  | 723/947 [00:47<00:09, 23.42it/s]Loading weights:  77%|███████▋  | 727/947 [00:47<00:11, 19.73it/s]Loading weights:  77%|███████▋  | 730/947 [00:47<00:10, 20.80it/s]Loading weights:  77%|███████▋  | 733/947 [00:47<00:12, 16.78it/s]Loading weights:  78%|███████▊  | 735/947 [00:47<00:12, 16.64it/s]Loading weights:  78%|███████▊  | 737/947 [00:48<00:15, 13.52it/s]Loading weights:  78%|███████▊  | 740/947 [00:48<00:16, 12.80it/s]Loading weights:  79%|███████▊  | 745/947 [00:48<00:16, 12.24it/s]Loading weights:  79%|███████▉  | 747/947 [00:48<00:15, 12.96it/s]Loading weights:  79%|███████▉  | 752/947 [00:49<00:11, 16.94it/s]Loading weights:  80%|███████▉  | 755/947 [00:49<00:11, 17.45it/s]Loading weights:  80%|███████▉  | 757/947 [00:49<00:14, 12.84it/s]Loading weights:  80%|████████  | 762/947 [00:49<00:12, 15.23it/s]Loading weights:  81%|████████▏ | 771/947 [00:50<00:10, 16.99it/s]Loading weights:  82%|████████▏ | 776/947 [00:50<00:10, 16.48it/s]Loading weights:  82%|████████▏ | 778/947 [00:50<00:13, 12.30it/s]Loading weights:  83%|████████▎ | 782/947 [00:51<00:11, 14.43it/s]Loading weights: 100%|██████████| 947/947 [00:51<00:00, 18.51it/s]
+loaded 56 s
+[transformers] Passing `generation_config` together with generation-related arguments=({'suppress_tokens', 'begin_suppress_tokens'}) is deprecated and will be removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer WhisperTokenizer. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+{
+ "text": " يا مرحباً بأصدقائي كثيرةً هي رسائل التي وصلتني من حضراتكم إلى أين تذهب يا أحمد فاخوري يا أبو حميد أين تركتنا هل ستذهب إلى تلك القناة أم تلك إلى هذه البلد أم تلك على كل حال أشعر أنني يجب أن أجيبه الآن ختيارك أنا هنا الجزيرة سأكون معكم دائماً في الجزيرة شكراً لأصدقائي أبو حميد يوزبط ساعته أبو حميد رومانسي أبو حميد على الكرسي وأعجبت جداً بهذا الاستوديو استوديو هائل إمكانيات هائلة آخر ما توصل إليه العلم العلم. لكن القصة ليست هنا. القصة هنا. مع هؤلاء الاصدقاء. لأننا سنصنع برنامجاً. لكن ما هو البرنامج? أنتم ستحذرون. يجب أن تنتظروا. الصبر جميل. ولن يكون عند الثالثة بتوقيت جرينشها. ايه? الثالثة.",
+ "chunks": [
+  {
+   "timestamp": [
+    0.0,
+    2.0
+   ],
+   "text": " يا مرحباً بأصدقائي"
+  },
+  {
+   "timestamp": [
+    2.0,
+    6.0
+   ],
+   "text": " كثيرةً هي رسائل التي وصلتني من حضراتكم"
+  },
+  {
+   "timestamp": [
+    6.0,
+    9.0
+   ],
+   "text": " إلى أين تذهب يا أحمد فاخوري"
+  },
+  {
+   "timestamp": [
+    9.0,
+    12.0
+   ],
+   "text": " يا أبو حميد أين تركتنا"
+  },
+  {
+   "timestamp": [
+    12.0,
+    15.0
+   ],
+   "text": " هل ستذهب إلى تلك القناة"
+  },
+  {
+   "timestamp": [
+    15.0,
+    17.0
+   ],
+   "text": " أم تلك"
+  },
+  {
+   "timestamp": [
+    17.0,
+    19.0
+   ],
+   "text": " إلى هذه البلد أم تلك"
+  },
+  {
+   "timestamp": [
+    19.0,
+    21.0
+   ],
+   "text": " على كل حال"
+  },
+  {
+   "timestamp": [
+    21.0,
+    26.0
+   ],
+   "text": " أشعر أنني يجب أن أجيبه الآن"
+  },
+  {
+   "timestamp": [
+    26.0,
+    28.0
+   ],
+   "text": " ختيارك"
+  },
+  {
+   "timestamp": [
+    28.0,
+    37.0
+   ],
+   "text": " أنا هنا الجزيرة سأكون معكم دائماً في الجزيرة شكراً لأصدقائي"
+  },
+  {
+   "timestamp": [
+    37.0,
+    44.0
+   ],
+   "text": " أبو حميد يوزبط ساعته أبو حميد رومانسي أبو حميد على الكرسي"
+  },
+  {
+   "timestamp": [
+    44.0,
+    52.0
+   ],
+   "text": " وأعجبت جداً بهذا الاستوديو استوديو هائل إمكانيات هائلة آخر ما توصل إليه العلم"
+  },
+  {
+   "timestamp": [
+    52.0,
+    59.76
+   ],
+   "text": " العلم. لكن القصة ليست هنا. القصة هنا. مع هؤلاء الاصدقاء."
+  },
+  {
+   "timestamp": [
+    59.76,
+    65.96
+   ],
+   "text": " لأننا سنصنع برنامجاً. لكن ما هو البرنامج? أنتم ستحذرون."
+  },
+  {
+   "timestamp": [
+    65.96,
+    72.12
+   ],
+   "text": " يجب أن تنتظروا. الصبر جميل. ولن يكون عند الثالثة بتوقيت"
+  },
+  {
+   "timestamp": [
+    72.12,
+    77.16
+   ],
+   "text": " جرينشها. ايه? الثالثة."
+  }
+ ]
+}
