@@ -10,3 +10,7 @@ frames_*
 out/voice/
 out/*.json
 out/audio.wav
+out/voice_kareem/
+out/voice_ref.wav
+voxcpm_voice.log
+out/*_v3.mp4
