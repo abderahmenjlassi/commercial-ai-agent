@@ -14,3 +14,9 @@ out/voice_kareem/
 out/voice_ref.wav
 voxcpm_voice.log
 out/*_v3.mp4
+clone/sample16.wav
+clone/asr.log
+clone/sample.mp3
+voxcpm_clone.log
+out/voice_design/
+out/*_v4.mp4

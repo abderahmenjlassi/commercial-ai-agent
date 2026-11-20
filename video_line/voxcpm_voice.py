@@ -19,15 +19,17 @@ model = VoxCPM.from_pretrained(MODEL, load_denoiser=False, optimize=False, devic
 SR = model.tts_model.sample_rate
 def post(raw, dst):   # trim silence, gentle clean-up and loudness match; mono 44.1 kHz
     sp.run(['ffmpeg', '-y', '-v', 'error', '-i', raw, '-af', 'highpass=f=70,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,loudnorm=I=-17:TP=-2:LRA=9', '-ar', '44100', '-ac', '1', dst], check=True)
-ref = 'out/voice_ref.wav'; ref_text = nar['a1']
-if not os.path.exists(ref):
+CLONE = os.environ.get('VOX_REF')            # path of a real voice sample -> clone that voice (no transcript needed)
+ref = CLONE or 'out/voice_ref.wav'; ref_text = nar['a1']
+if not CLONE and not os.path.exists(ref):
     torch.manual_seed(42); t = time.time()
     w = model.generate(text=DESIGN + ref_text, cfg_value=2.0, inference_timesteps=10)
     sf.write('out/_ref_raw.wav', w, SR); post('out/_ref_raw.wav', ref); os.remove('out/_ref_raw.wav'); print('reference voice', round(time.time() - t), 's', flush=True)
 dur = {}; ids = list(nar.keys())
 for n, bid in enumerate(ids):
     t = time.time(); torch.manual_seed(1000 + n)
-    w = model.generate(text=nar[bid], prompt_wav_path=ref, prompt_text=ref_text, reference_wav_path=ref, cfg_value=2.0, inference_timesteps=10)
+    w = (model.generate(text=nar[bid], reference_wav_path=ref, cfg_value=2.0, inference_timesteps=10) if CLONE else
+         model.generate(text=nar[bid], prompt_wav_path=ref, prompt_text=ref_text, reference_wav_path=ref, cfg_value=2.0, inference_timesteps=10))
     raw = f'out/_raw_{bid}.wav'; sf.write(raw, w, SR); post(raw, f'out/voice/{bid}.wav'); os.remove(raw)
     info = sf.info(f'out/voice/{bid}.wav'); dur[bid] = round(info.frames / info.samplerate, 2)
     print(bid, dur[bid], 's  (', round(time.time() - t), 's to generate )', flush=True)
