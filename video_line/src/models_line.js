@@ -27,6 +27,7 @@ function l298nTexture() {
     ['ENA', 'IN1', 'IN2', 'IN3', 'IN4', 'ENB'].forEach((n, i) => { g.save(); g.translate(X(-6.35 + i * 2.54), Z(-15.6)); g.rotate(-Math.PI / 2); g.font = `bold ${1.15 * S}px DejaVu Sans, Arial`; g.fillText(n, 0, 0); g.restore(); });
     ['12V', 'GND', '5V'].forEach((n, i) => { g.save(); g.translate(X(-15.2), Z(-7 + i * 7)); g.rotate(-Math.PI / 2); g.font = `bold ${1.4 * S}px DejaVu Sans, Arial`; g.fillText(n, 0, 0); g.restore(); });
     g.strokeStyle = '#e8d9d9'; g.lineWidth = 3; g.strokeRect(X(-20.5), Z(-20.5), 41 * S, 41 * S);
+    for (const [hx, hz] of [[-19, -19], [19, -19], [-19, 19], [19, 19]]) { g.fillStyle = '#f2e9e9'; g.beginPath(); g.arc(X(hx), Z(hz), 1.9 * S, 0, 7); g.fill(); g.fillStyle = '#5a1015'; g.beginPath(); g.arc(X(hx), Z(hz), 1.35 * S, 0, 7); g.fill(); }
   }, 16);
 }
 export function makeL298N() {
@@ -54,7 +55,8 @@ export function makeL298N() {
   for (const x of [-6.35, 6.35]) { const c = box(2.7, 4.5, 5.2, std(0x151515, 0.5), x, 2.2, -15.2); caps.add(c); }
   g.add(caps); g.userData.caps = caps;
   // 5V-EN jumper, caps, diodes, regulator
-  g.add(box(2.7, 4.5, 5.2, std(0xe5c542, 0.5), -12, 2.2, 14)); for (const [x, z] of [[8, 9], [14, 9], [8, 4]]) g.add(box(3.2, 1.4, 6.5, MAT.black, x, 0.7, z));
+  for (let i = 0; i < 8; i++) { const zz = i < 4 ? -13.5 + i * 3.6 : 3 + (i - 4) * 3.6; g.add(box(5.2, 1.5, 2.2, MAT.black, i < 4 ? 14.5 : 14.5, 0.75, zz)); }
+  g.add(box(2.7, 4.5, 5.2, std(0x151515, 0.5), -12, 2.2, 14)); for (const [x, z] of [[8, 9], [14, 9], [8, 4]]) g.add(box(3.2, 1.4, 6.5, MAT.black, x, 0.7, z));
   g.add(cyl(4.2, 11, std(0xc9ced6, 0.35, 0.7), 12, 5.5, 2, 24)); g.add(cyl(3.6, 9, std(0xc9ced6, 0.35, 0.7), 13, 4.5, -8, 24));
   g.add(box(6.5, 2.4, 6.5, MAT.black, -13, 1.2, 8)); const led = box(2, 0.8, 1.2, std(0xff2a2a, 0.3), -13, 0.5, -8.5); g.add(led);
   const glow = makeGlow(0xff4444, 6); glow.position.set(-13, 1.8, -8.5); g.add(glow); g.userData.power = a => { led.material.emissive = new THREE.Color(0xff2020); led.material.emissiveIntensity = 2.2 * a; glow.material.opacity = 0.5 * a; };
@@ -62,25 +64,37 @@ export function makeL298N() {
   return g;
 }
 
-// ---------------------------------------------------------------- TCRT5000 IR reflective sensor module (long axis = y, sensor down)
+// ---------------------------------------------------------------- TCRT5000 line-tracking module as sold in the kit (black PCB, 3 pins GND VCC OUT; long axis = y, optical head down)
+function irTexture() {
+  const W = 256, H = 700; // 11.5 x 32.5 mm board face
+  return canvasTex(W, H, (g) => {
+    g.fillStyle = '#17181c'; g.fillRect(0, 0, W, H);
+    g.strokeStyle = '#2b2d34'; g.lineWidth = 4; for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(20 + i * 28, 0); g.lineTo(20 + i * 28, H); g.stroke(); }
+    g.fillStyle = '#f1f1f1'; g.strokeStyle = '#f1f1f1'; g.lineWidth = 7;
+    const ring = (cx, cy, r) => { g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.fillStyle = '#c9ccd2'; g.beginPath(); g.arc(cx, cy, r - 4, 0, 7); g.fill(); g.fillStyle = '#f1f1f1'; };
+    ring(128, 580, 46); ring(128, 490, 36);
+    g.font = 'bold 34px DejaVu Sans, Arial'; g.textAlign = 'center'; g.fillText('R', 36, 600); g.fillText('T', 222, 600);
+    g.font = 'bold 22px DejaVu Sans, Arial'; g.fillText('R1', 218, 290); g.fillText('R3', 214, 190); g.fillText('LED', 212, 150);
+    g.font = 'bold 30px DejaVu Sans, Arial'; g.fillText('GND', 46, 42); g.fillText('VCC', 128, 42); g.fillText('OUT', 214, 42);
+  }, 16);
+}
 export function makeIRSensor() {
   const g = new THREE.Group(); g.name = 'ir';
-  const pcb = std(0x1d4fc0, 0.4);
-  g.add(box(1.6, 32, 14, pcb, 3.2, 0, 0));
-  // electronics on the +x face
-  g.add(box(4.9, 1.6, 5.1, MAT.black, 5.7, 8, 2.5));                  // LM393 (SOP-8)
-  g.add(box(4.8, 9.6, 10, std(0x1e62d8, 0.4), 6.4, 11.4, -1));          // blue trimmer pot
-  g.add(cyl(2.0, 1.2, std(0xc6a24a, 0.3, 0.9), 9.5, 11.4, -1, 18, 'x'));
-  g.add(box(1.8, 1.2, 0.9, std(0xcfd6c0, 0.5), 5.0, 3.6, 4.5)); g.add(box(1.8, 1.2, 0.9, std(0xcfd6c0, 0.5), 5.0, 2.2, 4.5));
-  const pl = box(1.8, 0.6, 1.1, std(0x10e060, 0.3), 4.5, -2.4, -4.8), sl = box(1.8, 0.6, 1.1, std(0xff3030, 0.3), 4.5, -4.4, -4.8); g.add(pl, sl); g.userData.sigLed = sl;
-  // 3-pin header at the top: VCC GND OUT
-  g.add(box(2.54, 2.5, 7.62, MAT.black, 3.2, 17.2, 0)); for (let i = 0; i < 3; i++) g.add(box(0.64, 8, 0.64, MAT.gold, 3.2, 21.5, (i - 1) * 2.54));
-  // TCRT5000 sensor (emitter = clear dome, receiver = black dome) at the bottom
+  const pcb = std(0x14151a, 0.35, 0.1);
+  g.add(box(1.6, 33, 11.5, pcb, 3.2, 2.5, 0));
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 33), new THREE.MeshStandardMaterial({ map: irTexture(), roughness: 0.4 })); face.rotation.y = Math.PI / 2; face.position.set(4.03, 2.5, 0); g.add(face);
+  // blue trimmer potentiometer "103" + LM393 + SMD parts
+  g.add(box(4.6, 7.6, 7.6, std(0x2457c9, 0.4), 6.3, 2.3, 0)); g.add(cyl(1.7, 1.2, std(0xe6e6e6, 0.3, 0.6), 9.0, 2.3, 0, 16, 'x'));
+  g.add(box(4.9, 1.6, 5.1, MAT.black, 5.7, 9.2, 0));
+  g.add(box(1.8, 1.2, 0.9, std(0xcfd6c0, 0.5), 5.0, 14.2, -3.4)); g.add(box(1.8, 1.2, 0.9, std(0x222222, 0.5), 5.0, 14.2, 3.2));
+  const sl = box(1.8, 0.8, 1.1, std(0xff3030, 0.3), 4.5, 15.6, -3.4); g.add(sl); g.userData.sigLed = sl; g.add(box(1.8, 0.8, 1.1, std(0x10e060, 0.3), 4.5, 15.6, 3.4));
+  // 3-pin header out of the top end: GND VCC OUT
+  g.add(box(2.54, 2.5, 7.62, MAT.black, 3.2, 20.7, 0)); for (let i = 0; i < 3; i++) g.add(box(0.64, 9, 0.64, MAT.gold, 3.2, 25.2, (i - 1) * 2.54));
+  // TCRT5000 head (black housing; emitter = blue clear dome, receiver = black dome) at the bottom
   g.add(box(5.8, 8, 10.2, std(0x0e0e10, 0.45), 0, -17.5, 0));
-  g.add(cyl(2.1, 3, std(0xd9ecff, 0.1), 0, -21.5, 2.8, 20, 'y')); g.add(cyl(2.1, 3, std(0x090909, 0.2), 0, -21.5, -2.8, 20, 'y'));
+  g.add(cyl(2.1, 3, std(0x4d7df0, 0.1), 0, -21.5, 2.8, 20, 'y')); g.add(cyl(2.1, 3, std(0x090909, 0.2), 0, -21.5, -2.8, 20, 'y'));
   g.add(box(0.5, 6, 0.5, MAT.silver, 3.2, -14, 4.5), box(0.5, 6, 0.5, MAT.silver, 3.2, -14, -4.5));
-  g.userData.tipY = -23.3;   // lowest point (optical face) relative to module centre
-  g.userData.emitterZ = 2.8; g.userData.receiverZ = -2.8;
+  g.userData.tipY = -23.3; g.userData.emitterZ = 2.8; g.userData.receiverZ = -2.8;
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
@@ -88,13 +102,14 @@ export function makeIRSensor() {
 // ---------------------------------------------------------------- TT gear motor (shaft axis = z, shaft at origin) and wheel
 export function makeTTMotor() {
   const g = new THREE.Group(); g.name = 'tt';
-  const yel = std(0xf2c230, 0.55);
-  g.add(rbox(40, 18.8, 22.5, 1.5, yel, 0, 0, 0));                             // gearbox
-  g.add(cyl(10.3, 30, std(0xc7ccd4, 0.35, 0.8), 34, 0, 0, 28, 'x'));          // motor can
-  g.add(cyl(10.4, 4, std(0x151515, 0.5), 50, 0, 0, 28, 'x'));                  // end cap
+  const yel = std(0xf5c518, 0.45);
+  g.add(rbox(40, 18.8, 22.5, 1.5, yel, 0, 0, 0));                             // yellow gearbox
+  g.add(rbox(10, 14, 22.6, 1, std(0xf5c518, 0.45), -14, 0, 0));
+  const can = cyl(10.3, 30, std(0x8e9298, 0.45, 0.55), 34, 0, 0, 32, 'x'); can.scale.y = 1; can.scale.z = 1; g.add(can);   // grey motor can
+  const flat = box(30, 16.2, 17.6, std(0x8e9298, 0.45, 0.55), 34, 0, 0); flat.visible = false; g.add(flat);
+  g.add(cyl(10.4, 4, std(0x151515, 0.5), 50, 0, 0, 32, 'x'));                  // end cap
   g.add(box(2, 1, 3.5, MAT.gold, 52.5, 3, -4), box(2, 1, 3.5, MAT.gold, 52.5, 3, 4)); // solder tabs
-  g.add(cyl(2.7, 40, std(0xe8eaee, 0.25, 0.9), 0, 0, 0, 16, 'z'));            // double D-shaft
-  for (const [x, z] of [[-14, 0], [14, 0]]) { const h = cyl(1.6, 24, MAT.black, x, 0, z, 12, 'z'); h.visible = false; g.add(h); }
+  g.add(cyl(2.7, 40, std(0xf0f0ea, 0.35, 0.1), 0, 0, 0, 16, 'z'));            // white double D-shaft
   g.userData.tabs = { a: [52.5, 3, -4], b: [52.5, 3, 4] };
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
@@ -102,14 +117,16 @@ export function makeTTMotor() {
 export function makeWheel() {
   const g = new THREE.Group(); g.name = 'wheel';
   const prof = []; const R = 32.5, W = 13;
-  const pts = [[0, -W], [R - 4, -W], [R - 1, -W + 2], [R, -W + 5], [R, W - 5], [R - 1, W - 2], [R - 4, W], [0, W]];
+  const pts = [[R - 10, -W + 3], [R - 4, -W], [R - 1, -W + 2], [R, -W + 5], [R, W - 5], [R - 1, W - 2], [R - 4, W], [R - 10, W - 3]];
   for (const [r, y] of pts) prof.push(new THREE.Vector2(r, y));
   const tire = new THREE.Mesh(new THREE.LatheGeometry(prof, 48), std(0x141416, 0.85)); tire.rotation.x = Math.PI / 2; tire.castShadow = true; tire.receiveShadow = true; g.add(tire);
   for (let i = 0; i < 36; i++) { const a = (i / 36) * Math.PI * 2; const t = box(3, 1.4, 20, std(0x0e0e10, 0.9), 0, 0, 0); t.position.set(Math.cos(a) * (R + 0.2), Math.sin(a) * (R + 0.2), 0); t.rotation.z = a; g.add(t); }
-  const hub = cyl(R - 6, 22, std(0xf3ecd2, 0.5), 0, 0, 0, 40, 'z'); g.add(hub);
-  for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const sp = box(10, 3, 23, std(0xc8bfa0, 0.5), 0, 0, 0); sp.position.set(Math.cos(a) * 14, Math.sin(a) * 14, 0); sp.rotation.z = a; g.add(sp); }
-  g.add(cyl(5, 26, std(0xdad2b4, 0.4), 0, 0, 0, 20, 'z'));
-  const mark = box(5, 5, 24, std(0xe34a3a, 0.4), 22, 0, 0); g.add(mark);  // red marker -> visible rotation
+  const Y = std(0xf7d11f, 0.4);   // yellow 5-spoke rim
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(R - 7.5, 2.6, 12, 48), Y); g.add(rim);
+  const dish = cyl(R - 9, 2.2, Y, 0, 0, -2, 40, 'z'); g.add(dish);
+  for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + 0.3; const sp = box(19, 5.5, 5, Y, 0, 0, 0); sp.position.set(Math.cos(a) * 14.5, Math.sin(a) * 14.5, 1); sp.rotation.z = a; g.add(sp); }
+  g.add(cyl(7.5, 22, Y, 0, 0, 0, 24, 'z'));
+  g.add(cyl(3, 24, std(0x111111, 0.6), 0, 0, 0, 12, 'z'));
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
@@ -117,23 +134,31 @@ export function makeWheel() {
 // ---------------------------------------------------------------- chassis, caster, battery
 export function makeChassis() {
   const g = new THREE.Group(); g.name = 'chassis';
-  const tex = canvasTex(1024, 560, (c, w, h) => {
-    c.fillStyle = '#dfe9f4'; c.fillRect(0, 0, w, h); c.fillStyle = '#7b8da6';
-    const S = 1024 / 208;
-    for (let i = 0; i < 9; i++) for (let j = 0; j < 5; j++) { c.beginPath(); c.arc((14 + i * 22) * S * 1.0, (12 + j * 22) * S, 1.5 * S, 0, 7); c.fill(); }
-    c.fillStyle = '#9fb2cb'; for (let i = 0; i < 6; i++) c.fillRect((20 + i * 30) * S, 50 * S, 14 * S, 3 * S);
-  });
-  const plate = new THREE.Mesh(new RoundedBoxGeometry(208, 3, 112, 2, 3), [std(0xdfe9f4, 0.3), std(0xdfe9f4, 0.3), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.3, transparent: true, opacity: 0.95 }), std(0xdfe9f4, 0.3), std(0xdfe9f4, 0.3), std(0xdfe9f4, 0.3)]);
-  plate.position.set(-4, 44, 0); plate.castShadow = true; plate.receiveShadow = true; g.add(plate);
-  // front sensor tab
-  const tab = new THREE.Mesh(new RoundedBoxGeometry(22, 3, 70, 1, 1), std(0xdfe9f4, 0.3)); tab.position.set(110, 44, 0); tab.castShadow = true; g.add(tab);
+  const sh = new THREE.Shape(); const hx = 104, hz = 54, rr = 10;
+  sh.moveTo(-hx + rr, -hz); sh.lineTo(hx - 34, -hz); sh.quadraticCurveTo(hx + 4, -hz, hx + 4, -hz + 34); sh.lineTo(hx + 4, hz - 34); sh.quadraticCurveTo(hx + 4, hz, hx - 34, hz);
+  sh.lineTo(-hx + rr, hz); sh.quadraticCurveTo(-hx, hz, -hx, hz - rr); sh.lineTo(-hx, -hz + rr); sh.quadraticCurveTo(-hx, -hz, -hx + rr, -hz);
+  const hole = (path) => sh.holes.push(path);
+  const circ = (cx, cy, r) => { const p = new THREE.Path(); p.absarc(cx, cy, r, 0, Math.PI * 2, true); hole(p); };
+  const rect = (cx, cy, w, h) => { const p = new THREE.Path(); p.moveTo(cx - w / 2, cy - h / 2); p.lineTo(cx - w / 2, cy + h / 2); p.lineTo(cx + w / 2, cy + h / 2); p.lineTo(cx + w / 2, cy - h / 2); p.closePath(); hole(p); };
+  circ(60, 0, 9);                                              // big cable hole
+  for (const z of [-30, 30]) { rect(-8, z, 18, 4); rect(-8, z, 4, 18); }  // plus-shaped cut-outs
+  rect(20, -44, 36, 3.5); rect(20, 44, 36, 3.5); rect(-60, 0, 24, 8);
+  for (const x of [-92, -76, -60, -44, -28, -12, 4, 20, 36, 52, 68, 84]) for (const z of [-46, 46]) circ(x, z, 1.6);
+  for (const x of [-86, -50, -14, 22, 58, 90]) circ(x, 0, 1.6);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false, curveSegments: 12 });
+  geo.rotateX(-Math.PI / 2); geo.translate(-4, 42.5, 0);      // shape y -> z, thickness up
+  const amber = new THREE.MeshStandardMaterial({ color: 0xc98e50, roughness: 0.32, metalness: 0.05, transparent: true, opacity: 0.93 });
+  const plate = new THREE.Mesh(geo, amber); plate.castShadow = true; plate.receiveShadow = true; g.add(plate);
+  const tab = new THREE.Mesh(new RoundedBoxGeometry(22, 3, 70, 1, 1), amber); tab.position.set(110, 44, 0); tab.castShadow = true; g.add(tab);
   g.userData.top = 45.5;
   return g;
 }
-export function makeCaster() {
+export function makeCaster() {   // metal universal ball caster with white ball
   const g = new THREE.Group(); g.name = 'caster';
-  g.add(mesh(new THREE.SphereGeometry(8, 24, 18), std(0xd5d9e0, 0.25, 0.9), 0, 8, 0));
-  g.add(cyl(6, 6, std(0xd5d9e0, 0.3, 0.8), 0, 18, 0, 20)); g.add(cyl(4.5, 21, std(0xb8bcc4, 0.35, 0.8), 0, 31.5, 0, 16));
+  const alu = std(0xcdd1d8, 0.3, 0.9);
+  g.add(mesh(new THREE.SphereGeometry(8, 28, 20), std(0xf4f4f0, 0.35), 0, 8, 0));
+  g.add(cyl(8.6, 3, alu, 0, 15.5, 0, 24)); g.add(cyl(5.2, 11, alu, 0, 22, 0, 18));
+  g.add(box(17, 2, 17, alu, 0, 28.5, 0)); g.add(cyl(4.5, 7, alu, 0, 33, 0, 16));
   return g;
 }
 export function makeBattery() { // 2S 18650 holder, local origin = holder bottom centre
@@ -142,6 +167,8 @@ export function makeBattery() { // 2S 18650 holder, local origin = holder bottom
   g.add(rbox(76, 6, 38, 2, black, 0, 3, 0));
   for (const z of [-9.5, 9.5]) { g.add(rbox(76, 12, 1.6, 0.8, black, 0, 12, z + (z > 0 ? 9.6 : -9.6))); g.add(cyl(9.1, 65, std(0x2a4fa6, 0.35, 0.3), 0, 15.2, z, 28, 'x')); g.add(cyl(9.2, 8, std(0xc7cbd2, 0.3, 0.9), 34.5, 15.2, z, 28, 'x')); g.add(cyl(9.2, 8, std(0xc7cbd2, 0.3, 0.9), -34.5, 15.2, z, 28, 'x')); }
   g.add(rbox(1.6, 12, 20, 0.8, black, 37.5, 12, 0)); g.add(rbox(1.6, 12, 20, 0.8, black, -37.5, 12, 0));
+  const wire = (c, z) => { const cv = new THREE.CatmullRomCurve3([new THREE.Vector3(-37.5, 8, z), new THREE.Vector3(-43, 9, z * 1.4), new THREE.Vector3(-49, 5, z * 2.2)]); const m = new THREE.Mesh(new THREE.TubeGeometry(cv, 12, 0.9, 8), std(c, 0.5)); m.castShadow = true; g.add(m); };
+  wire(0xd51f1f, -4); wire(0x151515, 4);
   g.userData.top = 24.5; g.userData.leadOut = [-38, 8, 0];
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
@@ -215,7 +242,7 @@ export function makeRobot() {
   for (const k of Object.keys(L298_PINS)) { const p = L298_PINS[k]; A[k] = k.startsWith('OUT') ? V(l[0] + p[0], l[1] + 10.4, l[2] + (p[1] < 0 ? -18.5 : 18.5)) : (k === 'V12' || k === 'GND' || k === 'V5') ? V(l[0] + p[0], l[1] + 10.4, l[2] + p[2]) : V(l[0] + p[0], l[1] + 8.6, l[2] + p[2]); }
   A.ard = n => unoPinLocal(n).add(V(la[0], la[1], la[2]));
   A.motorTab = (side, which) => V(8, 46.5, side * (which === 'a' ? 49 : 55));
-  A.ir = (side, which) => { const x = LAYOUT.sensorX + 3.2; const zOff = { VCC: -2.54, GND: 0, OUT: 2.54 }[which]; return V(x, LAYOUT.sensorY + 25.5, side * LAYOUT.sensorZ + zOff); };
+  A.ir = (side, which) => { const x = LAYOUT.sensorX + 3.2; const zOff = { GND: -2.54, VCC: 0, OUT: 2.54 }[which]; return V(x, LAYOUT.sensorY + 25.5, side * LAYOUT.sensorZ + zOff); };
   A.battery = (which) => V(LAYOUT.battery[0] - 38, 45.5 + 8, LAYOUT.battery[2] + (which === '+' ? -4 : 4));
   A.switchPts = [V(4 + 6, 45.5 + 8, 40), V(4 - 6, 45.5 + 8, 40)];
   robot.userData.anchors = A;

@@ -36,7 +36,7 @@ const BEATS = [
   ['E', 'e6', 10, 3.8, 'Ça se répète des centaines de fois par seconde'],
   ['F', 'f1', 6, 1.6, 'USB + carte Arduino Uno + port'], ['F', 'f2', 6, 1.6, '➡️ Téléverser'],
   ['G', 'g1', 10.5, 10.5, 'Il suit la ligne !'], ['G', 'g2', 3, 2.4, '🛑 Barre noire : stop'],
-  ['H', 'h1', 4, 2.8, 'Idée : ajoute un 3ᵉ capteur'], ['H', 'h2', 3, 2.0, '🌟 Bravo, jeunes ingénieurs !'],
+  ['H', 'h1', 4, 2.8, '🏁 Défi : ajoute un 3ᵉ capteur !'], ['H', 'h2', 3, 2.0, '🌟 Bravo, jeunes ingénieurs !'],
 ];
 export const BEATS0 = BEATS;
 const LEAD = 0.7, TAIL = 0.7, GAP = 0.2;
@@ -87,7 +87,7 @@ export function toVideo(t) { for (const g of segs) if (t < g.t1) return g.v0 + (
 export function sfxVideo() {
   const ev = []; const add = (tt, k) => ev.push({ t: toVideo(tt), k });
   for (const s of SCENES) add(s.t0 + 0.05, 'whoosh');
-  K.partsAppear.forEach(x => add(x, 'pop'));
+  add(3.7, 'ding'); add(0.15, 'beep'); K.partsAppear.forEach(x => add(x, 'pop'));
   [K.chassis, ...K.motors, ...K.wheels, K.caster, ...K.sensors, K.battery, K.l298n, K.arduino].forEach(x => add(x + 0.4, 'click'));
   [...K.motorLeads, ...K.sensorWires, ...K.ctrlWires, ...K.powerLeads].forEach(x => add(x + 0.9, 'tick'));
   add(K.capsOff, 'pop'); add(K.upload, 'ding'); add(B.d9.t0 + 0.1, 'ding'); add(B.g2.t0 + 0.2, 'beep');

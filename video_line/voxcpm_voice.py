@@ -25,8 +25,9 @@ if not CLONE and not os.path.exists(ref):
     torch.manual_seed(42); t = time.time()
     w = model.generate(text=DESIGN + ref_text, cfg_value=2.0, inference_timesteps=10)
     sf.write('out/_ref_raw.wav', w, SR); post('out/_ref_raw.wav', ref); os.remove('out/_ref_raw.wav'); print('reference voice', round(time.time() - t), 's', flush=True)
-dur = {}; ids = list(nar.keys())
-for n, bid in enumerate(ids):
+ONLY = os.environ.get('ONLY'); dur = json.load(open('out/voice.json')) if ONLY else {}; ids = [i for i in nar if (not ONLY or i in ONLY.split(','))]
+for bid in ids:
+    n = list(nar).index(bid)
     t = time.time(); torch.manual_seed(1000 + n)
     w = (model.generate(text=nar[bid], reference_wav_path=ref, cfg_value=2.0, inference_timesteps=10) if CLONE else
          model.generate(text=nar[bid], prompt_wav_path=ref, prompt_text=ref_text, reference_wav_path=ref, cfg_value=2.0, inference_timesteps=10))

@@ -20,7 +20,7 @@ const cyl = (r, h, mat, x, y, z, seg = 24, r2 = r) => mesh(new THREE.CylinderGeo
 function rbox(w, h, d, r, mat, x, y, z) { return mesh(new RoundedBoxGeometry(w, h, d, 3, r), mat, x, y, z); }
 
 export const MAT = {
-  pcb: new THREE.MeshPhysicalMaterial({ color: 0x00838c, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }),
+  pcb: new THREE.MeshPhysicalMaterial({ color: 0x1d52b8, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }),
   black: new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.5, metalness: 0.1 }),
   darkgrey: new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.55, metalness: 0.2 }),
   silver: new THREE.MeshStandardMaterial({ color: 0xd2d6db, roughness: 0.28, metalness: 1 }),
@@ -72,11 +72,11 @@ function unoTexture() {
   const px = m => m * 0.0254 * S, py = m => (2100 - m) * 0.0254 * S;
   return canvasTex(W, D, (g) => {
     const grd = g.createLinearGradient(0, 0, W, D);
-    grd.addColorStop(0, '#04909a'); grd.addColorStop(1, '#007a83');
+    grd.addColorStop(0, '#2a63c6'); grd.addColorStop(1, '#1a4aa6');
     g.fillStyle = grd; g.fillRect(0, 0, W, D);
     // faint traces
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    g.strokeStyle = 'rgba(0,70,78,0.55)'; g.lineWidth = 3;
+    g.strokeStyle = 'rgba(8,34,100,0.55)'; g.lineWidth = 3;
     for (let i = 0; i < 70; i++) {
       let x = rnd() * W, y = rnd() * D; g.beginPath(); g.moveTo(x, y);
       for (let k = 0; k < 3; k++) { if (rnd() > 0.5) x += (rnd() - 0.5) * 300; else y += (rnd() - 0.5) * 300; g.lineTo(x, y); }

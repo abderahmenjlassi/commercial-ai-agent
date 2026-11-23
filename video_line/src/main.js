@@ -33,7 +33,7 @@ scene.fog = new THREE.Fog(BG, 560, 1800);
 const pm = new THREE.PMREMGenerator(renderer);
 const envTex = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 
-const camera = new THREE.PerspectiveCamera(38, W / H, 1, 6000);
+const camera = new THREE.PerspectiveCamera(38, W / H, 6, 6000);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x9fb0d0, 1.0));
 const key = new THREE.DirectionalLight(0xfff6e8, 1.9);
 key.position.set(140, 260, 200); key.castShadow = true; key.shadow.mapSize.set(+(QP.get('sm') || 2048), +(QP.get('sm') || 2048));
@@ -55,7 +55,7 @@ floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(60, 
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshBasicMaterial({ map: floorTex }));
 floor.rotation.x = -Math.PI / 2; scene.add(floor);
 const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.ShadowMaterial({ opacity: 0.32 }));
-shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = 0.05; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
+shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = 0.45; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
 
 // ------------------------------------------------------------------ labels
 const svg = $('lines'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`); const labelLayer = $('labels'); const SVGNS = 'http://www.w3.org/2000/svg';
@@ -85,7 +85,7 @@ function setHUD(el, a, html) {
   el.style.opacity = a; el.style.visibility = a > 0.01 ? 'visible' : 'hidden';
   el.style.transform = el.dataset.tx ? el.dataset.tx.replace('@', (1 - a) * 16) : `translateY(${(1 - a) * 16}px)`;
 }
-for (const id of ['pins', 'tl', 'caption', 'road']) $(id).dataset.tx = 'translateX(-50%) translateY(@px)';
+for (const id of ['pins', 'tl', 'caption', 'road', 'hook', 'quiz']) $(id).dataset.tx = 'translateX(-50%) translateY(@px)';
 const fadeEl = $('fade');
 const inWin = (t, t0, t1, f = 0.5) => Math.min(ramp(t, t0, f), 1 - ramp(t, t1 - f, f));
 // ------------------------------------------------------------------ camera
@@ -108,7 +108,7 @@ const orbit = (cx, cy, cz, r, h, az, lx = 0, ly = 0) => ({ p: [cx + Math.sin(az)
 const robot = L.makeRobot(); scene.add(robot);
 const P = robot.userData.parts, AN = robot.userData.anchors;
 const track = new THREE.Mesh(new THREE.PlaneGeometry(1500, 900), new THREE.MeshBasicMaterial({ map: L.trackTexture(S.TRK) }));
-track.rotation.x = -Math.PI / 2; track.position.y = 0.02; scene.add(track);
+track.rotation.x = -Math.PI / 2; track.position.y = 0.2; scene.add(track);
 
 // mini breadboard (5V / GND rails) on the right of the Arduino
 const MBB = { s: 0.55, pos: V(62, 50.2, 41) };
@@ -116,7 +116,7 @@ const mbb = M.makeBreadboard(); mbb.scale.setScalar(MBB.s); mbb.position.copy(MB
 const railW = (side, k) => M.bbRail(side, k).multiplyScalar(MBB.s).add(MBB.pos);
 
 // sensor ground spots (demo)
-const spots = [-1, 1].map(sd => { const m = new THREE.Mesh(new THREE.CircleGeometry(6.5, 24), new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.55, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(L.LAYOUT.sensorX, 0.3, sd * L.LAYOUT.sensorZ); robot.add(m); return m; });
+const spots = [-1, 1].map(sd => { const m = new THREE.Mesh(new THREE.CircleGeometry(6.5, 24), new THREE.MeshBasicMaterial({ color: 0xff3030, transparent: true, opacity: 0.55, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(L.LAYOUT.sensorX, 0.8, sd * L.LAYOUT.sensorZ); robot.add(m); return m; });
 
 // wires
 const C = { red: 0xe11d1d, blk: 0x1a1b1e, yel: 0xf5c400, org: 0xf97316, grn: 0x16a34a, blu: 0x2563eb, vio: 0x7c3aed, pnk: 0xdb2777, teal: 0x0d9488, brn: 0x92400e };
@@ -272,25 +272,34 @@ function robotRest() { robot.position.set(0, 0, 0); robot.rotation.y = 0; P.whee
 function allHidden() { robot.visible = track.visible = gParts.visible = gTheory.visible = gUsb.visible = false; mbb.visible = P.mbb.visible; }
 
 const lw = (o, x, y, z) => o.localToWorld(V(x, y, z));
+const QUIZ = { c1: ['🤔 Comment le robot voit-il la ligne ?', 0.2], c2: ['🤔 Pourquoi pas le moteur directement sur l’Arduino ?', 0.3], e3: ['🤔 Et si le capteur GAUCHE voit la ligne ?', 0.55], e4: ['🤔 Et si c’est le capteur DROIT ?', 0.5], e6: ['🤔 Combien de décisions par seconde ?', 0.45] };
 function update(t) {
   allHidden();
   const sc = T.sceneAt(t), beat = T.beatAt(t), id = beat ? beat.id : '';
-  const hud = { title: 0, card: 0, stepper: 0, formula: 0, kid: 0, pins: 0, outro: 0 };
+  const hud = { hook: 0, title: 0, card: 0, stepper: 0, formula: 0, kid: 0, pins: 0, outro: 0 };
   let cardHTML, stepHTML, formHTML, kidHTMLs, pinsHTML; const labels = []; let cam; const sT = t - sc.t0;
   if (VERT) { vkNow = { A: 1.15, B: 1.2, C: 1.25, D: 1.7, E: 1.5, F: 1.8, G: 1.0, H: 1.0 }[sc.id]; distMin = sc.id === 'D' ? 270 : 0; voffNow = { A: 60, B: 30, C: 140, D: 330, E: 330, F: 200, G: 200, H: 80 }[sc.id]; }
   const sx = VERT ? 0 : 1;   // lateral shift used to make room for side panels in landscape
 
   // title
   const titleEl = $('title'); titleEl.classList.toggle('big', sc.id === 'A');
-  titleEl.querySelector('.pill').textContent = sc.id === 'A' ? 'Projet robotique · 14 ans' : `Partie ${T.SCENES.indexOf(sc) + 1} / ${T.SCENES.length}`;
+  titleEl.querySelector('.pill').textContent = sc.id === 'A' ? 'Construis-le toi-même 🛠️' : `Partie ${T.SCENES.indexOf(sc) + 1} / ${T.SCENES.length}`;
   titleEl.querySelector('h1').textContent = sc.id === 'A' ? 'Suiveur de ligne' : sc.title;
   titleEl.querySelector('.en').textContent = sc.sub;
-  hud.title = sc.id === 'A' ? ramp(t, 0.6, 0.8) * (1 - ramp(t, sc.t1 - 1.5, 0.8)) : (sc.id === 'G' || sc.id === 'E' ? 0 : ramp(t, sc.t0 + 0.4, 0.5) * (1 - ramp(t, sc.t0 + 5.5, 0.6)));
+  hud.title = sc.id === 'A' ? ramp(t, 3.7, 0.6) * (1 - ramp(t, sc.t1 - 1.5, 0.8)) : (sc.id === 'G' || sc.id === 'E' ? 0 : ramp(t, sc.t0 + 0.4, 0.5) * (1 - ramp(t, sc.t0 + 5.5, 0.6)));
 
   if (sc.id === 'A') {
     robot.visible = track.visible = true; robotBuild(t, true); const q = S.simAt(Math.max(0, t - sc.t0 - 0.4)); robotPose(q);
     setShadow(q.x, q.z, 260, 360);
-    cam = { p: V(q.x + (VERT ? 10 : -20), 330, q.z + 520), l: V(q.x + (VERT ? 40 : -150), 30, q.z - 20), f: 38 };
+    const wideC = { p: V(q.x + (VERT ? 10 : -20), 330, q.z + 520), l: V(q.x + (VERT ? 40 : -150), 30, q.z - 20), f: 38 };
+    // cold open: low, fast chase camera right behind the robot, then pull back to the wide shot
+    const chase = { p: V(q.x - 120, 95, q.z + 250), l: V(q.x + 55, 30, q.z + 8), f: 44 };
+    const u = sstep(clamp((sT - 2.9) / 1.5));
+    cam = { p: chase.p.clone().lerp(wideC.p, u), l: chase.l.clone().lerp(wideC.l, u), f: lerp(chase.f, wideC.f, u) };
+    const hk = ramp(t, 0.1, 0.25) * (1 - ramp(t, 3.4, 0.35));
+    $('hook').querySelector('.hk1').innerHTML = 'Un robot qui roule <mark>TOUT SEUL</mark> ! 🤯';
+    $('hook').querySelector('.hk2').textContent = 'Sans télécommande · Sans pilote';
+    hud.hook = hk;
   }
 
   if (sc.id === 'B') {
@@ -307,7 +316,7 @@ function update(t) {
     });
     const wide = { t: B.b0.t0, p: [0, 240, 1040], l: [0, 25, 0], f: 36 };
     const keys = [wide, { ...wide, t: B.b0.t1 - 0.3 }];
-    stages.forEach((s, i) => { const b = B['b' + (i + 1)]; const x = s.s.position.x; const k = VERT ? { p: [x, 100, 275], l: [x, 42, 0], f: 36 } : { p: [x - 28, 100, 275], l: [x - 62, 42, 0], f: 36 }; keys.push({ ...k, t: b.t0 + 1.0 }, { ...k, t: b.t1 - 0.1 }); });
+    stages.forEach((s, i) => { const b = B['b' + (i + 1)]; const x = s.s.position.x; const k = VERT ? { p: [x, 100, 275], l: [x, 42, 0], f: 36 } : { p: [x + 46, 105, 280], l: [x + 78, 42, 0], f: 36 }; keys.push({ ...k, t: b.t0 + 1.0 }, { ...k, t: b.t1 - 0.1 }); });
     cam = camAt(keys, t);
     if (act !== undefined) { const d = PARTS[act]; hud.card = ramp(t, B['b' + (act + 1)].t0 + 0.6, 0.4) * (1 - ramp(t, B['b' + (act + 1)].t1 - 0.3, 0.3));
       cardHTML = `<div class="bigemo">${d.e}</div><h2>${d.n}</h2><div class="cnt">Quantité : ${d.q}</div><p>${d.d}</p>`; }
@@ -427,6 +436,7 @@ function update(t) {
   renderer.render(scene, camera);
   showLabels(labels);
 
+  setHUD($('hook'), hud.hook);
   setHUD($('title'), hud.title);
   setHUD($('card'), hud.card, cardHTML);
   setHUD($('stepper'), hud.stepper, stepHTML);
@@ -439,7 +449,11 @@ function update(t) {
     const ts = clamp((t - B.e6.t0) / (B.e6.t1 - B.e6.t0)) * 10.2; const q = S.simAt(ts); const cv = document.getElementById('simc'); if (cv) drawSim(cv, ts);
     for (const k of ['straight', 'left', 'right', 'stop']) { const el = document.getElementById('cs_' + k); if (el) el.classList.toggle('on', q.b === k); }
   }
-  let ca = 0, ctext; if (beat && beat.text) { ca = ramp(t, beat.t0 - 0.05, 0.3) * (1 - ramp(t, beat.t1 - 0.2, 0.2)); ctext = beat.text; }
+  let ca = 0, ctext, qa = 0, qans = false; if (beat && beat.text) { ca = ramp(t, beat.t0 - 0.05, 0.3) * (1 - ramp(t, beat.t1 - 0.2, 0.2)); ctext = beat.text;
+    const qz = QUIZ[id]; if (qz) { const fr = (t - beat.t0) / (beat.t1 - beat.t0); qans = fr >= qz[1]; if (!qans) ctext = qz[0]; qa = ca; } }
+  $('caption').classList.toggle('q', qa > 0 && !qans);
+  const qe = $('quiz'); qe.classList.toggle('ans', qans); qe.textContent = qans ? '💡 La réponse' : '🤔 Devine !';
+  setHUD(qe, qa, undefined);
   setHUD($('caption'), sc.id === 'H' && id === 'h2' ? 0 : ca, ctext);
   const f = Math.max(1 - ramp(t, sc.t0, 0.7), ramp(t, sc.t1 - 0.7, 0.7)); fadeEl.style.opacity = t < 0.02 ? 1 : f;
 }
