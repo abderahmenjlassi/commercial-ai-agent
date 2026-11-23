@@ -5,8 +5,8 @@ import json, os, subprocess as sp, wave
 import numpy as np
 R = '/home/user/commercial-ai-agent'; B = f'{R}/branding/build'
 JOBS = [
- ('line_h', f'{R}/video_line/out/suiveur_de_ligne_16x9_voix_ar_v5.mp4', f'{R}/video_line/out/events.json', 'fr', 'h', f'{R}/video_line/out/suiveur_de_ligne_16x9_voix_ar_v5_brand.mp4'),
- ('line_v', f'{R}/video_line/out/suiveur_de_ligne_9x16_voix_ar_v5.mp4', f'{R}/video_line/out/events.json', 'fr', 'v', f'{R}/video_line/out/suiveur_de_ligne_9x16_voix_ar_v5_brand.mp4'),
+ ('line_h', f'{R}/video_line/out/suiveur_de_ligne_16x9_voix_ar_v6.mp4', f'{R}/video_line/out/events.json', 'fr', 'h', f'{R}/video_line/out/suiveur_de_ligne_16x9_voix_ar_v6_brand.mp4'),
+ ('line_v', f'{R}/video_line/out/suiveur_de_ligne_9x16_voix_ar_v6.mp4', f'{R}/video_line/out/events.json', 'fr', 'v', f'{R}/video_line/out/suiveur_de_ligne_9x16_voix_ar_v6_brand.mp4'),
  ('tl_h', f'{R}/video/out/arduino_traffic_light_paced_16x9.mp4', f'{R}/video/out/events.json', 'ar', 'h', f'{R}/video/out/arduino_traffic_light_paced_16x9_brand.mp4'),
  ('tl_v', f'{R}/video/out/arduino_traffic_light_paced_9x16.mp4', f'{R}/video/out/events.json', 'ar', 'v', f'{R}/video/out/arduino_traffic_light_paced_9x16_brand.mp4'),
 ]
