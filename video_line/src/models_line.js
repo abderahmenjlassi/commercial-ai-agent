@@ -37,8 +37,11 @@ export function makeL298N() {
   // heatsink with fins + L298 power IC
   const alu = std(0x1b1d22, 0.5, 0.4);
   g.add(box(22, 3, 20, alu, -4, 1.5, -2));
-  for (let i = 0; i < 7; i++) g.add(box(22, 22, 1.1, alu, -4, 14, -10.5 + i * 3.1));
-  g.add(box(20, 14, 4.5, MAT.black, -4, 7, 9)); for (let i = 0; i < 15; i++) g.add(box(0.5, 4, 0.5, MAT.silver, -12 + i * 1.7, 2, 12.5));
+  for (let i = 0; i < 7; i++) { const h = 12 + (6 - i) * 1.9; g.add(box(22, h, 1.1, alu, -4, 3 + h / 2, -10.5 + i * 3.1)); }
+  g.add(box(22, 15, 1.4, alu, -4, 10.5, 8.2));                                     // front wall of the U-shaped heatsink
+  g.add(box(20, 9, 4.5, MAT.black, -4, 4.5, 11.2));                                // L298 Multiwatt body
+  g.add(box(14, 7.5, 0.9, std(0xd9dce1, 0.4, 0.35), -4, 12.2, 9.2)); g.add(cyl(1.5, 1.2, std(0xa5a9b0, 0.4, 0.4), -4, 12.4, 9.9, 16, 'z'));   // metal tab + screw
+  for (let i = 0; i < 15; i++) g.add(box(0.5, 4, 0.5, MAT.silver, -12 + i * 1.7, 2, 12.5));
   // screw terminals (blue)
   const blue = std(0x2467d1, 0.5);
   const term = (x, z, n, along) => { const b = box(along ? 10 : 10, 9, along ? 5 * n : 5 * n, blue, x, 4.5, z); g.add(b);
@@ -57,7 +60,7 @@ export function makeL298N() {
   // 5V-EN jumper, caps, diodes, regulator
   for (let i = 0; i < 8; i++) { const zz = i < 4 ? -13.5 + i * 3.6 : 3 + (i - 4) * 3.6; g.add(box(5.2, 1.5, 2.2, MAT.black, i < 4 ? 14.5 : 14.5, 0.75, zz)); }
   g.add(box(2.7, 4.5, 5.2, std(0x151515, 0.5), -12, 2.2, 14)); for (const [x, z] of [[8, 9], [14, 9], [8, 4]]) g.add(box(3.2, 1.4, 6.5, MAT.black, x, 0.7, z));
-  g.add(cyl(4.2, 11, std(0xc9ced6, 0.35, 0.7), 12, 5.5, 2, 24)); g.add(cyl(3.6, 9, std(0xc9ced6, 0.35, 0.7), 13, 4.5, -8, 24));
+  g.add(cyl(5, 2, MAT.black, 12, 1, 2, 24)); g.add(cyl(4.2, 11, std(0xdfe2e7, 0.4, 0.3), 12, 7.5, 2, 24)); g.add(cyl(4.2, 2, MAT.black, 13, 1, -8, 24)); g.add(cyl(3.6, 9, std(0xdfe2e7, 0.4, 0.3), 13, 6.5, -8, 24));
   g.add(box(6.5, 2.4, 6.5, MAT.black, -13, 1.2, 8)); const led = box(2, 0.8, 1.2, std(0xff2a2a, 0.3), -13, 0.5, -8.5); g.add(led);
   const glow = makeGlow(0xff4444, 6); glow.position.set(-13, 1.8, -8.5); g.add(glow); g.userData.power = a => { led.material.emissive = new THREE.Color(0xff2020); led.material.emissiveIntensity = 2.2 * a; glow.material.opacity = 0.5 * a; };
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -84,7 +87,7 @@ export function makeIRSensor() {
   g.add(box(1.6, 33, 11.5, pcb, 3.2, 2.5, 0));
   const face = new THREE.Mesh(new THREE.PlaneGeometry(11.5, 33), new THREE.MeshStandardMaterial({ map: irTexture(), roughness: 0.4 })); face.rotation.y = Math.PI / 2; face.position.set(4.03, 2.5, 0); g.add(face);
   // blue trimmer potentiometer "103" + LM393 + SMD parts
-  g.add(box(4.6, 7.6, 7.6, std(0x2457c9, 0.4), 6.3, 2.3, 0)); g.add(cyl(1.7, 1.2, std(0xe6e6e6, 0.3, 0.6), 9.0, 2.3, 0, 16, 'x'));
+  g.add(box(4.2, 7.6, 7.6, std(0x3a9ad9, 0.4), 6.1, 2.3, 0)); g.add(cyl(3.0, 1.6, std(0xf4f4f1, 0.35), 8.6, 2.3, 0, 24, 'x')); g.add(box(0.5, 0.8, 4.6, std(0xb9b9b4, 0.4), 9.5, 2.3, 0));
   g.add(box(4.9, 1.6, 5.1, MAT.black, 5.7, 9.2, 0));
   g.add(box(1.8, 1.2, 0.9, std(0xcfd6c0, 0.5), 5.0, 14.2, -3.4)); g.add(box(1.8, 1.2, 0.9, std(0x222222, 0.5), 5.0, 14.2, 3.2));
   const sl = box(1.8, 0.8, 1.1, std(0xff3030, 0.3), 4.5, 15.6, -3.4); g.add(sl); g.userData.sigLed = sl; g.add(box(1.8, 0.8, 1.1, std(0x10e060, 0.3), 4.5, 15.6, 3.4));
@@ -140,9 +143,9 @@ export function makeChassis() {
   const hole = (path) => sh.holes.push(path);
   const circ = (cx, cy, r) => { const p = new THREE.Path(); p.absarc(cx, cy, r, 0, Math.PI * 2, true); hole(p); };
   const rect = (cx, cy, w, h) => { const p = new THREE.Path(); p.moveTo(cx - w / 2, cy - h / 2); p.lineTo(cx - w / 2, cy + h / 2); p.lineTo(cx + w / 2, cy + h / 2); p.lineTo(cx + w / 2, cy - h / 2); p.closePath(); hole(p); };
-  circ(60, 0, 9);                                              // big cable hole
-  for (const z of [-30, 30]) { rect(-8, z, 18, 4); rect(-8, z, 4, 18); }  // plus-shaped cut-outs
-  rect(20, -44, 36, 3.5); rect(20, 44, 36, 3.5); rect(-60, 0, 24, 8);
+  circ(78, 0, 9);                                              // big cable hole
+  for (const z of [-30, 30]) { rect(48, z, 18, 4); rect(48, z, 4, 18); }  // plus-shaped cut-outs
+  rect(17, 0, 12, 16); rect(-30, -34, 24, 5); rect(-30, 34, 24, 5); rect(-62, 0, 30, 5); rect(92, -22, 4, 22); rect(92, 22, 4, 22);
   for (const x of [-92, -76, -60, -44, -28, -12, 4, 20, 36, 52, 68, 84]) for (const z of [-46, 46]) circ(x, z, 1.6);
   for (const x of [-86, -50, -14, 22, 58, 90]) circ(x, 0, 1.6);
   const geo = new THREE.ExtrudeGeometry(sh, { depth: 3, bevelEnabled: false, curveSegments: 12 });
@@ -156,25 +159,31 @@ export function makeChassis() {
 export function makeCaster() {   // metal universal ball caster with white ball
   const g = new THREE.Group(); g.name = 'caster';
   const alu = std(0xcdd1d8, 0.3, 0.9);
-  g.add(mesh(new THREE.SphereGeometry(8, 28, 20), std(0xf4f4f0, 0.35), 0, 8, 0));
+  g.add(mesh(new THREE.SphereGeometry(8, 28, 20), std(0xdfe3e8, 0.25, 0.85), 0, 8, 0));
   g.add(cyl(8.6, 3, alu, 0, 15.5, 0, 24)); g.add(cyl(5.2, 11, alu, 0, 22, 0, 18));
   g.add(box(17, 2, 17, alu, 0, 28.5, 0)); g.add(cyl(4.5, 7, alu, 0, 33, 0, 16));
   return g;
 }
-export function makeBattery() { // 2S 18650 holder, local origin = holder bottom centre
+export function makeBattery() { // 4 x AA holder (as in the kit), local origin = holder bottom centre; long axis = x
   const g = new THREE.Group(); g.name = 'battery';
   const black = std(0x111214, 0.55);
-  g.add(rbox(76, 6, 38, 2, black, 0, 3, 0));
-  for (const z of [-9.5, 9.5]) { g.add(rbox(76, 12, 1.6, 0.8, black, 0, 12, z + (z > 0 ? 9.6 : -9.6))); g.add(cyl(9.1, 65, std(0x2a4fa6, 0.35, 0.3), 0, 15.2, z, 28, 'x')); g.add(cyl(9.2, 8, std(0xc7cbd2, 0.3, 0.9), 34.5, 15.2, z, 28, 'x')); g.add(cyl(9.2, 8, std(0xc7cbd2, 0.3, 0.9), -34.5, 15.2, z, 28, 'x')); }
-  g.add(rbox(1.6, 12, 20, 0.8, black, 37.5, 12, 0)); g.add(rbox(1.6, 12, 20, 0.8, black, -37.5, 12, 0));
-  const wire = (c, z) => { const cv = new THREE.CatmullRomCurve3([new THREE.Vector3(-37.5, 8, z), new THREE.Vector3(-43, 9, z * 1.4), new THREE.Vector3(-49, 5, z * 2.2)]); const m = new THREE.Mesh(new THREE.TubeGeometry(cv, 12, 0.9, 8), std(c, 0.5)); m.castShadow = true; g.add(m); };
+  g.add(rbox(62, 3, 62, 1.5, black, 0, 1.5, 0));                              // floor
+  for (const z of [-31, 31]) g.add(rbox(62, 14, 1.8, 0.8, black, 0, 7.5, z + (z > 0 ? -0.9 : 0.9)));  // outer walls
+  for (const z of [-15.5, 0, 15.5]) g.add(rbox(62, 12, 1.6, 0.6, black, 0, 7, z)); // dividers
+  for (const x of [-30.2, 30.2]) g.add(rbox(1.6, 14, 62, 0.8, black, x, 7.5, 0));  // end walls
+  const spring = std(0xc9ccd2, 0.3, 0.9);
+  for (let i = 0; i < 4; i++) { const z = -23.25 + i * 15.5;
+    g.add(cyl(6.9, 50, std(i % 2 ? 0x2a4fa6 : 0x2a4fa6, 0.35, 0.3), 0, 9.8, z, 24, 'x'));                 // AA cell
+    g.add(cyl(7.0, 4, std(0xd8a24a, 0.3, 0.8), 25, 9.8, z, 24, 'x')); g.add(cyl(2.4, 1.6, spring, 27.6, 9.8, z, 14, 'x'));   // + end
+    g.add(cyl(7.0, 3, spring, -25.5, 9.8, z, 24, 'x')); }
+  const wire = (c, z) => { const cv = new THREE.CatmullRomCurve3([new THREE.Vector3(-30.5, 8, z), new THREE.Vector3(-37, 9, z * 1.4), new THREE.Vector3(-44, 5, z * 2.2)]); const m = new THREE.Mesh(new THREE.TubeGeometry(cv, 12, 0.9, 8), std(c, 0.5)); m.castShadow = true; g.add(m); };
   wire(0xd51f1f, -4); wire(0x151515, 4);
-  g.userData.top = 24.5; g.userData.leadOut = [-38, 8, 0];
+  g.userData.top = 17; g.userData.leadOut = [-31, 8, 0];
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
 export function makeSwitch() {
-  const g = new THREE.Group(); g.add(box(13, 8, 19, std(0x1a1a1c, 0.5), 0, 4, 0)); const lev = box(6, 5, 8, std(0xd23030, 0.45), 0, 9.5, 0); lev.rotation.z = 0.25; g.add(lev);
+  const g = new THREE.Group(); g.add(box(13, 8, 19, std(0x1a1a1c, 0.5), 0, 4, 0)); const lev = box(6, 5, 8, std(0x26272b, 0.45), 0, 9.5, 0); lev.rotation.z = 0.25; g.add(lev);
   g.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); return g;
 }
 
@@ -243,7 +252,7 @@ export function makeRobot() {
   A.ard = n => unoPinLocal(n).add(V(la[0], la[1], la[2]));
   A.motorTab = (side, which) => V(8, 46.5, side * (which === 'a' ? 49 : 55));
   A.ir = (side, which) => { const x = LAYOUT.sensorX + 3.2; const zOff = { GND: -2.54, VCC: 0, OUT: 2.54 }[which]; return V(x, LAYOUT.sensorY + 25.5, side * LAYOUT.sensorZ + zOff); };
-  A.battery = (which) => V(LAYOUT.battery[0] - 38, 45.5 + 8, LAYOUT.battery[2] + (which === '+' ? -4 : 4));
+  A.battery = (which) => V(LAYOUT.battery[0] - 31, 45.5 + 8, LAYOUT.battery[2] + (which === '+' ? -4 : 4));
   A.switchPts = [V(4 + 6, 45.5 + 8, 40), V(4 - 6, 45.5 + 8, 40)];
   robot.userData.anchors = A;
   return robot;

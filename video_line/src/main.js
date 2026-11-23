@@ -166,7 +166,7 @@ function stage(i) { const s = new THREE.Group(); s.position.x = (i - 2.5) * 190;
 {
   const a = M.makeArduino(); a.scale.setScalar(1.3); stage(0).f.add(a); Object.assign(stages[0], { item: a, base: 50, tilt: 0.5 });
   const l = L.makeL298N(); l.scale.setScalar(1.7); stage(1).f.add(l); Object.assign(stages[1], { item: l, base: 50, tilt: 0.45 });
-  const g2 = new THREE.Group(); for (const z of [-20, 20]) { const m = L.makeIRSensor(); m.position.z = z; g2.add(m); } g2.scale.setScalar(1.7); stage(2).f.add(g2); Object.assign(stages[2], { item: g2, base: 55, tilt: 0.1 });
+  const g2 = new THREE.Group(); const g2i = new THREE.Group(); for (const z of [-20, 20]) { const m = L.makeIRSensor(); m.position.z = z; g2i.add(m); } g2i.rotation.y = -Math.PI / 2; g2i.rotation.z = 0.0; g2.add(g2i); g2.scale.setScalar(1.7); stage(2).f.add(g2); Object.assign(stages[2], { item: g2, base: 55, tilt: 0.1 });
   const g3 = new THREE.Group(); const m3 = L.makeTTMotor(); m3.position.x = -20; g3.add(m3); const w3 = L.makeWheel(); w3.position.set(-20, 0, 26); g3.add(w3); g3.scale.setScalar(0.95); stage(3).f.add(g3); Object.assign(stages[3], { item: g3, base: 50, tilt: 0.35 });
   const g4 = new THREE.Group(); const ch = L.makeChassis(); ch.position.y = -44; g4.add(ch); const cs = L.makeCaster(); cs.position.set(-92, -44, 0); g4.add(cs); g4.scale.setScalar(0.5); stage(4).f.add(g4); Object.assign(stages[4], { item: g4, base: 50, tilt: 0.45 });
   const g5 = new THREE.Group(); const bt = L.makeBattery(); g5.add(bt); const sw = L.makeSwitch(); sw.position.set(-55, 0, 45); g5.add(sw); g5.scale.setScalar(1.15); stage(5).f.add(g5); Object.assign(stages[5], { item: g5, base: 40, tilt: 0.45 });
@@ -200,7 +200,7 @@ const PARTS = [
   { e: '👁️', n: 'Capteurs IR TCRT5000', d: 'Détectent la ligne noire (sortie 0 ou 1)', q: 2 },
   { e: '🛞', n: 'Moteur réducteur TT + roue', d: 'Les 2 roues motrices', q: 2 },
   { e: '🔩', n: 'Châssis 2WD + roue folle', d: 'Plateau acrylique + bille de support', q: 1 },
-  { e: '🔋', n: 'Batterie 7,4 V (2×18650)', d: 'Alimente les moteurs via le L298N', q: 1 },
+  { e: '🔋', n: 'Support 4 piles AA (6 V)', d: 'Alimente les moteurs via le L298N', q: 1 },
 ];
 // top-down mini diagram of one decision case
 function caseSVG(Ls, Rs, l, r) {

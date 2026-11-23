@@ -102,13 +102,13 @@ function unoTexture() {
     ['', 'IOREF', 'RESET', '3.3V', '5V', 'GND', 'GND', 'VIN'].forEach((t, i) => t && label(t, 1000 + 100 * i, 235, 20));
     for (let i = 0; i < 6; i++) label('A' + i, 1900 + 100 * i, 235, 26);
     label('POWER', 1350, 330, 26); label('ANALOG IN', 2150, 330, 26);
-    // brand
-    g.fillStyle = '#ffffff'; g.font = 'bold 74px DejaVu Sans, Arial'; g.fillText('ARDUINO', px(1520), py(1240));
-    g.font = 'bold 54px DejaVu Sans, Arial'; g.fillText('UNO', px(2260), py(1240));
-    // infinity logo
-    g.lineWidth = 9; g.strokeStyle = '#ffffff';
-    g.beginPath(); g.ellipse(px(1980) - 40, py(1240), 34, 24, 0, 0, 7); g.stroke();
-    g.beginPath(); g.ellipse(px(1980) + 40, py(1240), 34, 24, 0, 0, 7); g.stroke();
+    // brand: infinity logo (left), ARDUINO below it, UNO in a rounded box (right)
+    g.strokeStyle = '#ffffff'; g.fillStyle = '#ffffff'; g.lineWidth = 11;
+    for (const dx of [-62, 62]) { g.beginPath(); g.arc(px(1560) + dx, py(1430), 52, 0, 7); g.stroke(); }
+    g.lineWidth = 8; g.beginPath(); g.moveTo(px(1560) - 84, py(1430)); g.lineTo(px(1560) - 40, py(1430)); g.stroke(); g.beginPath(); g.moveTo(px(1560) + 40, py(1430)); g.lineTo(px(1560) + 84, py(1430)); g.moveTo(px(1560) + 62, py(1430) - 22); g.lineTo(px(1560) + 62, py(1430) + 22); g.stroke();
+    g.font = 'bold 62px DejaVu Sans, Arial'; g.textAlign = 'center'; g.fillText('ARDUINO', px(1560), py(1230));
+    g.lineWidth = 8; g.beginPath(); g.roundRect(px(2000), py(1430) - 52, 190, 104, 40); g.stroke(); g.font = 'bold 62px DejaVu Sans, Arial'; g.fillText('UNO', px(2000) + 95, py(1430) + 22);
+    g.font = 'bold 20px DejaVu Sans, Arial'; g.fillText('WWW.ARDUINO.CC - MADE IN ITALY', px(1850), py(700));
     g.font = 'bold 24px DejaVu Sans, Arial'; g.fillStyle = '#e6f6f7';
     g.fillText('TX', px(880), py(1880)); g.fillText('RX', px(880), py(1990)); g.fillText('ON', px(1200), py(1700)); g.fillText('L', px(1200), py(1560));
     // sockets for pin-1 marks
