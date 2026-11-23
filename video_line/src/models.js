@@ -23,7 +23,7 @@ export const MAT = {
   pcb: new THREE.MeshPhysicalMaterial({ color: 0x1d52b8, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35 }),
   black: new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.5, metalness: 0.1 }),
   darkgrey: new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.55, metalness: 0.2 }),
-  silver: new THREE.MeshStandardMaterial({ color: 0xd2d6db, roughness: 0.28, metalness: 1 }),
+  silver: new THREE.MeshStandardMaterial({ color: 0xe3e6ea, roughness: 0.32, metalness: 0.45 }),
   gold: new THREE.MeshStandardMaterial({ color: 0xe0b44a, roughness: 0.3, metalness: 1 }),
   ivory: new THREE.MeshStandardMaterial({ color: 0xece6d8, roughness: 0.6 }),
   hole: new THREE.MeshBasicMaterial({ color: 0x050505 }),

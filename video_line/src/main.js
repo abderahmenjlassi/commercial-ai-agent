@@ -195,12 +195,12 @@ function stepperHTML(cur, list, title) { return `<h3>${title}</h3>` + list.map((
 const STEPS_D = ['Châssis, moteurs, roues', 'Capteurs à l’avant', 'Arduino · L298N · batterie', 'Moteurs → OUT1…OUT4', 'Capteurs → 5V · GND · D2/D3', 'Commande L298N → D5…D10', 'Alimentation · GND commun', 'Retirer les cavaliers ENA/ENB'];
 const STEPS_F = ['Brancher le câble USB', 'Choisir Arduino Uno + port', 'Téléverser ➡️'];
 const PARTS = [
-  { e: '🧠', n: 'Arduino Uno R3', d: 'Le cerveau : lit les capteurs et commande le driver', q: 1 },
-  { e: '⚙️', n: 'Driver moteur L298N', d: 'Double pont en H : alimente les 2 moteurs', q: 1 },
-  { e: '👁️', n: 'Capteurs IR TCRT5000', d: 'Détectent la ligne noire (sortie 0 ou 1)', q: 2 },
-  { e: '🛞', n: 'Moteur réducteur TT + roue', d: 'Les 2 roues motrices', q: 2 },
-  { e: '🔩', n: 'Châssis 2WD + roue folle', d: 'Plateau acrylique + bille de support', q: 1 },
-  { e: '🔋', n: 'Support 4 piles AA (6 V)', d: 'Alimente les moteurs via le L298N', q: 1 },
+  { img: 'uno', e: '🧠', n: 'Arduino Uno R3', d: 'Le cerveau : lit les capteurs et commande le driver', q: 1 },
+  { img: 'l298n', e: '⚙️', n: 'Driver moteur L298N', d: 'Double pont en H : alimente les 2 moteurs', q: 1 },
+  { img: 'ir', e: '👁️', n: 'Capteurs IR TCRT5000', d: 'Détectent la ligne noire (sortie 0 ou 1)', q: 2 },
+  { img: 'motorwheel', e: '🛞', n: 'Moteur réducteur TT + roue', d: 'Les 2 roues motrices', q: 2 },
+  { img: 'chassis', e: '🔩', n: 'Châssis 2WD + roue folle', d: 'Plateau acrylique + bille de support', q: 1 },
+  { img: 'battery', e: '🔋', n: 'Support 4 piles AA (6 V)', d: 'Alimente les moteurs via le L298N', q: 1 },
 ];
 // top-down mini diagram of one decision case
 function caseSVG(Ls, Rs, l, r) {
@@ -319,7 +319,7 @@ function update(t) {
     stages.forEach((s, i) => { const b = B['b' + (i + 1)]; const x = s.s.position.x; const k = VERT ? { p: [x, 100, 275], l: [x, 42, 0], f: 36 } : { p: [x + 46, 105, 280], l: [x + 78, 42, 0], f: 36 }; keys.push({ ...k, t: b.t0 + 1.0 }, { ...k, t: b.t1 - 0.1 }); });
     cam = camAt(keys, t);
     if (act !== undefined) { const d = PARTS[act]; hud.card = ramp(t, B['b' + (act + 1)].t0 + 0.6, 0.4) * (1 - ramp(t, B['b' + (act + 1)].t1 - 0.3, 0.3));
-      cardHTML = `<div class="bigemo">${d.e}</div><h2>${d.n}</h2><div class="cnt">Quantité : ${d.q}</div><p>${d.d}</p>`; }
+      cardHTML = `<div class="realph"><img src="img/${d.img}.jpg"><span>📷 Produit réel</span></div><h2>${d.e} ${d.n}</h2><div class="cnt">Quantité : ${d.q}</div><p>${d.d}</p>`; }
   }
 
   if (sc.id === 'C') {
